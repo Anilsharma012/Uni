@@ -77,39 +77,42 @@ const Wishlist = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {wishlistItems.map((item: any) => (
-              <Card key={item.id || item._id} className="overflow-hidden bg-card border-border">
-                {item.products && (
-                  <>
-                    <div className="aspect-square overflow-hidden bg-secondary">
-                      <img
-                        src={item.products.image_url}
-                        alt={item.products.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                        {item.products.category}
-                      </p>
-                      <h3 className="font-semibold mb-2">{item.products.name}</h3>
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-bold">
-                          ₹{Number(item.products.price || 0).toLocaleString('en-IN')}
-                        </p>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => removeFromWishlist(String(item.id || item._id))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+            {wishlistItems.map((item: any) => {
+              const product = item.productId || item.products;
+              return (
+                <Card key={item._id} className="overflow-hidden bg-card border-border">
+                  {product && (
+                    <>
+                      <div className="aspect-square overflow-hidden bg-secondary">
+                        <img
+                          src={product.image_url || product.image || '/placeholder.svg'}
+                          alt={product.name || 'Product'}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </div>
-                  </>
-                )}
-              </Card>
-            ))}
+                      <div className="p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                          {product.category || 'Uncategorized'}
+                        </p>
+                        <h3 className="font-semibold mb-2">{product.name || product.title || 'Product'}</h3>
+                        <div className="flex items-center justify-between">
+                          <p className="text-lg font-bold">
+                            ₹{Number(product.price || 0).toLocaleString('en-IN')}
+                          </p>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => removeFromWishlist(String(item._id))}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
