@@ -1,9 +1,11 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,9 +72,27 @@ const ProductDetail = () => {
 
   const img = useMemo(() => resolveImage(product?.image_url || (product?.images?.[0] || '')), [product]);
   const title = product?.title || product?.name || '';
+  const stockNum = useMemo(() => Number(product?.stock ?? 0), [product]);
+  const outOfStock = stockNum === 0;
+  const refetchProduct = useCallback(async () => {
+    try {
+      const { ok, json } = await api(`/api/products/${id}`);
+      if (ok) setProduct(json?.data as P);
+    } catch {}
+  }, [id]);
+
+  useEffect(() => {
+    const onOrderPlaced = () => { refetchProduct(); };
+    window.addEventListener('order:placed', onOrderPlaced);
+    return () => window.removeEventListener('order:placed', onOrderPlaced);
+  }, [refetchProduct]);
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (outOfStock) {
+      toast({ title: 'Out of stock', variant: 'destructive' });
+      return;
+    }
     // If product defines sizes, require selection
     if (Array.isArray(product?.sizes) && product.sizes.length > 0 && !selectedSize) {
       toast({ title: 'Select a size', description: 'Please choose a size before adding to cart.', variant: 'destructive' });
@@ -133,6 +153,9 @@ const ProductDetail = () => {
             <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">{product.category}</p>
             <h1 className="text-4xl font-black tracking-tighter mb-4">{title}</h1>
             <p className="text-3xl font-bold mb-6">₹{Number(product.price || 0).toLocaleString('en-IN')}</p>
+            <div className="mb-4">
+              <Badge variant={outOfStock ? 'destructive' : 'secondary'}>{outOfStock ? 'Not Available' : 'Available'}</Badge>
+            </div>
             <p className="text-muted-foreground mb-8">{product.description}</p>
 
             {Array.isArray(product?.sizes) && product.sizes.length > 0 && (
@@ -165,10 +188,26 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <Button size="lg" className="w-full" onClick={handleAddToCart}>
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart
-            </Button>
+            {outOfStock ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full">
+                      <Button size="lg" className="w-full" disabled>
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Add to Cart
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Out of stock</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button size="lg" className="w-full" onClick={handleAddToCart}>
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Add to Cart
+              </Button>
+            )}
           </div>
         </div>
       </main>
