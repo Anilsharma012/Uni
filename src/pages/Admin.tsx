@@ -44,6 +44,7 @@ const ENDPOINTS = {
   orders: '/api/orders',
   users: '/api/auth/users',
   settings: '/api/settings',
+  categories: '/api/categories',
 };
 
 type Section = (typeof NAV_ITEMS)[number]['id'];
