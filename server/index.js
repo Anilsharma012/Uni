@@ -69,6 +69,8 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/products', adminProductRoutes);
 
 async function start() {
   const uri = process.env.MONGODB_URI;
