@@ -341,6 +341,10 @@ const Admin = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [productForm, setProductForm] = useState<ProductFormState>(EMPTY_FORM);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catSaving, setCatSaving] = useState(false);
 
   const [settings, setSettings] = useState<IntegrationSettings>(createDefaultSettings);
   const [settingsLoading, setSettingsLoading] = useState(true);
