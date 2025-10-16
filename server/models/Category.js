@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
+
+function buildSlug(name) {
+  return slugify(String(name || ''), { lower: true, strict: true });
+}
 
 const CategorySchema = new mongoose.Schema(
   {
