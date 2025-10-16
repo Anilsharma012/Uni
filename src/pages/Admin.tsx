@@ -1011,6 +1011,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                         if (API_BASE && !(isLocalBase && isHttpsPage)) {
                           const base = API_BASE.endsWith('/') ? API_BASE.slice(0,-1) : API_BASE;
                           return String(url).startsWith('/') ? `${base}${url}` : `${base}/${url}`;
+                        } else {
+                          return String(url).startsWith('/') ? `/api${url}` : `/api/${url}`;
                         }
                       }
                       return url;
