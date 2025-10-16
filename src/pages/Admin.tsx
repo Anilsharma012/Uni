@@ -372,6 +372,9 @@ const Admin = () => {
       image_url: product.image_url ?? (Array.isArray(product.images) ? product.images[0] : '') ?? '',
       category: product.category ?? '',
       stock: Number(product.stock ?? 0),
+      sizes: Array.isArray((product as any).sizes)
+        ? (product as any).sizes
+        : (Array.isArray((product as any).attributes?.sizes) ? (product as any).attributes.sizes : []),
     });
     setIsDialogOpen(true);
   };
