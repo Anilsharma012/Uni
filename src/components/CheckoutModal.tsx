@@ -61,6 +61,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       }
 
       toast({ title: "Order placed", description: `Order #${newOrderId} placed successfully` });
+      try { window.dispatchEvent(new CustomEvent('order:placed', { detail: { id: newOrderId } })); } catch {}
       clearCart();
       setOpen(false);
       navigate("/dashboard", { replace: true });
