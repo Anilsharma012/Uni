@@ -89,7 +89,7 @@ const ProductDetail = () => {
     toast({ title: 'Added to cart!', description: `${title} has been added to your cart.` });
   };
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading…</div>;
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading���</div>;
   if (!product) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
@@ -110,7 +110,21 @@ const ProductDetail = () => {
 
         <div className="grid md:grid-cols-2 gap-12">
           <div className="aspect-square bg-secondary rounded-lg overflow-hidden">
-            <img src={img} alt={title} className="w-full h-full object-cover" />
+            <img
+              src={img}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                try {
+                  const el = e.currentTarget as HTMLImageElement;
+                  const cur = String(el.src || '');
+                  // Try swapping to /api/uploads or /uploads variants before falling back to placeholder
+                  const candidate = cur.includes('/api/uploads') ? cur.replace('/api/uploads', '/uploads') : (cur.includes('/uploads') ? `/api${cur}` : '/placeholder.svg');
+                  if (candidate !== cur) el.src = candidate;
+                  else el.src = '/placeholder.svg';
+                } catch { e.currentTarget.src = '/placeholder.svg'; }
+              }}
+            />
           </div>
 
           <div>
