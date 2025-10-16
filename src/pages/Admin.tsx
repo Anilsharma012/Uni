@@ -1406,6 +1406,38 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               />
             </div>
 
+            <div className="border-t border-border pt-5">
+              <Label className="font-medium mb-3 block">UPI QR Code</Label>
+              <p className="text-sm text-muted-foreground mb-4">Upload your UPI QR code image to display during checkout when customers select UPI as payment method.</p>
+
+              <div className="space-y-3">
+                {paymentForm.upiQrCode && (
+                  <div className="border border-border rounded p-3 bg-muted">
+                    <p className="text-xs text-muted-foreground mb-2">Current QR Code:</p>
+                    <img src={paymentForm.upiQrCode} alt="UPI QR Code" className="w-32 h-32 object-contain" />
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    id="qr_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadQrCode(f);
+                      e.currentTarget.value = '';
+                    }}
+                    disabled={uploadingQrCode || settingsLoading || savingPayment}
+                    className="flex-1"
+                  />
+                  <Button type="button" disabled={uploadingQrCode || settingsLoading || savingPayment} variant="outline">
+                    {uploadingQrCode ? 'Uploading...' : 'Upload QR'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <Button type="submit" disabled={savingPayment || settingsLoading} className="w-full md:w-auto">
               {savingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Payment Settings
