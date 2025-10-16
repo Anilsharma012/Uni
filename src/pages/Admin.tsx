@@ -22,6 +22,7 @@ import {
   Users2,
   CreditCard,
   Truck,
+  Tags,
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,6 +33,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '';
 // Using an empty API_BASE defaults to relative '/api' paths which works in preview where backend is proxied.
@@ -41,6 +44,7 @@ const ENDPOINTS = {
   orders: '/api/orders',
   users: '/api/auth/users',
   settings: '/api/settings',
+  categories: '/api/categories',
 };
 
 type Section = (typeof NAV_ITEMS)[number]['id'];
@@ -73,6 +77,7 @@ type IntegrationSettings = {
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'products', label: 'Products', icon: Package },
+  { id: 'categories', label: 'Categories', icon: Tags },
   { id: 'orders', label: 'Orders', icon: Receipt },
   { id: 'users', label: 'Users', icon: Users2 },
   { id: 'payment', label: 'Payment Settings', icon: CreditCard },
@@ -303,6 +308,7 @@ type ProductFormState = {
   image_url: string;
   category: string;
   stock: number;
+  sizes: string[];
 };
 
 const EMPTY_FORM: ProductFormState = {
@@ -312,6 +318,7 @@ const EMPTY_FORM: ProductFormState = {
   image_url: '',
   category: '',
   stock: 0,
+  sizes: [],
 };
 
 const Admin = () => {
@@ -334,6 +341,10 @@ const Admin = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [productForm, setProductForm] = useState<ProductFormState>(EMPTY_FORM);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catSaving, setCatSaving] = useState(false);
 
   const [settings, setSettings] = useState<IntegrationSettings>(createDefaultSettings);
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -361,6 +372,9 @@ const Admin = () => {
       image_url: product.image_url ?? (Array.isArray(product.images) ? product.images[0] : '') ?? '',
       category: product.category ?? '',
       stock: Number(product.stock ?? 0),
+      sizes: Array.isArray((product as any).sizes)
+        ? (product as any).sizes
+        : (Array.isArray((product as any).attributes?.sizes) ? (product as any).attributes.sizes : []),
     });
     setIsDialogOpen(true);
   };
@@ -387,6 +401,7 @@ const Admin = () => {
 
     void fetchAdminResources();
     void fetchIntegrationSettings();
+    void fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading, adminUser]);
 
@@ -446,6 +461,46 @@ const Admin = () => {
       setSettings(createDefaultSettings());
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await apiFetch<any[]>(ENDPOINTS.categories);
+      const arr = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
+      setCategories(arr);
+    } catch (e: any) {
+      console.warn('Failed to load categories', e?.message || e);
+      setCategories([]);
+    }
+  };
+
+  const addCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+    try {
+      setCatSaving(true);
+      await apiFetch(ENDPOINTS.categories, { method: 'POST', body: JSON.stringify({ name: catName.trim(), description: catDesc.trim() }) });
+      toast.success('Category added');
+      setCatName('');
+      setCatDesc('');
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add category');
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    const ok = confirm('Delete this category?');
+    if (!ok) return;
+    try {
+      await apiFetch(`${ENDPOINTS.categories}/${id}`, { method: 'DELETE' });
+      toast.success('Category deleted');
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete category');
     }
   };
 
@@ -585,6 +640,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         image_url: productForm.image_url.trim(),
         category: productForm.category.trim(),
         stock,
+        sizes: Array.isArray(productForm.sizes) ? productForm.sizes : [],
       };
 
       if (editingProduct) {
@@ -873,12 +929,52 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               </div>
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
+                <Select
                   value={productForm.category}
-                  onChange={(e) => setProductForm((p) => ({ ...p, category: e.target.value }))}
-                  required
-                />
+                  onValueChange={(val) => setProductForm((p) => ({ ...p, category: val }))}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c: any) => (
+                      <SelectItem key={(c as any)._id || (c as any).id || (c as any).name} value={(c as any).name}>
+                        {(c as any).name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Can't find it?{' '}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => { setActiveSection('categories'); setIsDialogOpen(false); }}
+                  >
+                    Add a new category
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <Label>Sizes</Label>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {['S','M','L','XL','XXL'].map((sz) => (
+                    <label key={sz} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={productForm.sizes.includes(sz)}
+                        onCheckedChange={(checked) => {
+                          const isOn = Boolean(checked);
+                          setProductForm((p) => ({
+                            ...p,
+                            sizes: isOn ? Array.from(new Set([...(p.sizes || []), sz])) : (p.sizes || []).filter((s) => s !== sz),
+                          }));
+                        }}
+                      />
+                      <span>{sz}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={saving}>
@@ -915,6 +1011,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                         if (API_BASE && !(isLocalBase && isHttpsPage)) {
                           const base = API_BASE.endsWith('/') ? API_BASE.slice(0,-1) : API_BASE;
                           return String(url).startsWith('/') ? `${base}${url}` : `${base}/${url}`;
+                        } else {
+                          return String(url).startsWith('/') ? `/api${url}` : `/api/${url}`;
                         }
                       }
                       return url;
@@ -948,6 +1046,60 @@ const handleProductSubmit = async (e: React.FormEvent) => {
           ))}
         </div>
       )}
+    </div>
+  );
+
+  const renderCategories = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Categories</h2>
+          <p className="text-sm text-muted-foreground">Add or remove product categories. These show in the product form.</p>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={addCategory} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-1">
+              <Label htmlFor="catName">Name</Label>
+              <Input id="catName" value={catName} onChange={(e)=>setCatName(e.target.value)} required />
+            </div>
+            <div className="md:col-span-1">
+              <Label htmlFor="catDesc">Description</Label>
+              <Input id="catDesc" value={catDesc} onChange={(e)=>setCatDesc(e.target.value)} />
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit" disabled={catSaving}>
+                {catSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Category
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3">
+        {categories.length === 0 && (
+          <p className="text-sm text-muted-foreground">No categories yet.</p>
+        )}
+        {categories.map((c: any) => (
+          <Card key={(c as any)._id || (c as any).id}>
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <h3 className="font-semibold">{(c as any).name}</h3>
+                {(c as any).description && <p className="text-sm text-muted-foreground">{(c as any).description}</p>}
+              </div>
+              <Button size="icon" variant="destructive" onClick={() => deleteCategory(((c as any)._id || (c as any).id) as any)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 
@@ -1260,6 +1412,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         return renderOverview();
       case 'products':
         return renderProducts();
+      case 'categories':
+        return renderCategories();
       case 'orders':
         return renderOrders();
       case 'users':

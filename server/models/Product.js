@@ -12,6 +12,7 @@ const ProductSchema = new mongoose.Schema(
     category: { type: String },
     stock: { type: Number, default: 0 },
     attributes: { type: Object, default: {} },
+    sizes: { type: [String], default: [] },
     active: { type: Boolean, default: true },
   },
   { timestamps: true },

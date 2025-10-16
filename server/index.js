@@ -54,7 +54,9 @@ app.use(express.json());
 
 // serve uploaded files from server/uploads (same as multer destination)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// uploads endpoint
+// also expose uploads under /api/uploads for frontends that proxy only /api
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+// uploads endpoint (POST for admin)
 app.use('/api/uploads', uploadsRoutes);
 
 // health check
@@ -118,6 +120,7 @@ async function start() {
 
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
+      console.log('Static uploads available at /uploads and /api/uploads');
     });
   } catch (err) {
     console.error('Failed to connect to MongoDB', err);

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const resolveImage = (src?: string) => {
@@ -20,6 +21,8 @@ const resolveImage = (src?: string) => {
     if (API_BASE && !(isLocalBase && isHttpsPage)) {
       const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
       return s.startsWith('/') ? `${base}${s}` : `${base}/${s}`;
+    } else {
+      return s.startsWith('/') ? `/api${s}` : `/api/${s}`;
     }
   }
   return s;
@@ -36,6 +39,7 @@ type P = {
   stock?: number;
   image_url?: string;
   images?: string[];
+  sizes?: string[];
 };
 
 const ProductDetail = () => {
@@ -48,6 +52,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<P | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>('');
 
   useEffect(() => {
     (async () => {
@@ -68,7 +73,15 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img };
+    // If product defines sizes, require selection
+    if (Array.isArray(product?.sizes) && product.sizes.length > 0 && !selectedSize) {
+      toast({ title: 'Select a size', description: 'Please choose a size before adding to cart.', variant: 'destructive' });
+      return;
+    }
+
+    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img, meta: {} as any };
+    if (selectedSize) item.meta.size = selectedSize;
+
     if (!user) {
       try { localStorage.setItem('uni_add_intent', JSON.stringify({ item, qty: quantity })); } catch {}
       navigate('/auth');
@@ -99,7 +112,21 @@ const ProductDetail = () => {
 
         <div className="grid md:grid-cols-2 gap-12">
           <div className="aspect-square bg-secondary rounded-lg overflow-hidden">
-            <img src={img} alt={title} className="w-full h-full object-cover" />
+            <img
+              src={img}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                try {
+                  const el = e.currentTarget as HTMLImageElement;
+                  const cur = String(el.src || '');
+                  // Try swapping to /api/uploads or /uploads variants before falling back to placeholder
+                  const candidate = cur.includes('/api/uploads') ? cur.replace('/api/uploads', '/uploads') : (cur.includes('/uploads') ? `/api${cur}` : '/placeholder.svg');
+                  if (candidate !== cur) el.src = candidate;
+                  else el.src = '/placeholder.svg';
+                } catch { e.currentTarget.src = '/placeholder.svg'; }
+              }}
+            />
           </div>
 
           <div>
@@ -107,6 +134,27 @@ const ProductDetail = () => {
             <h1 className="text-4xl font-black tracking-tighter mb-4">{title}</h1>
             <p className="text-3xl font-bold mb-6">₹{Number(product.price || 0).toLocaleString('en-IN')}</p>
             <p className="text-muted-foreground mb-8">{product.description}</p>
+
+            {Array.isArray(product?.sizes) && product.sizes.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold mb-3">Size</label>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSelectedSize(sz)}
+                      className={cn(
+                        'px-3 py-1 rounded border',
+                        selectedSize === sz ? 'bg-primary text-primary-foreground border-primary' : 'bg-transparent border-border',
+                      )}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-8">
               <label className="block text-sm font-semibold mb-3">Quantity</label>

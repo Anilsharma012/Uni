@@ -74,6 +74,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
         ? [body.image_url]
         : [],
       attributes: body.attributes || {},
+      sizes: Array.isArray(body.sizes) ? body.sizes : (Array.isArray(body.attributes?.sizes) ? body.attributes.sizes : []),
       active: typeof body.active === 'boolean' ? body.active : true,
     };
 
@@ -104,6 +105,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (typeof body.active !== 'undefined') updates.active = !!body.active;
     if (typeof body.image_url !== 'undefined') updates.images = [body.image_url];
     if (Array.isArray(body.images)) updates.images = body.images;
+    if (Array.isArray(body.sizes)) updates.sizes = body.sizes;
 
     const doc = await Product.findByIdAndUpdate(id, updates, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
