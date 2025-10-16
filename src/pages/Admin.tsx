@@ -542,8 +542,10 @@ const Admin = () => {
         }
       }
 
-      // Try primary API_BASE upload (if configured)
-      if (primaryUrl) {
+      // Try primary API_BASE upload (if configured) — but skip if API_BASE is localhost and frontend is remote
+      const frontendIsRemote = !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1');
+      const apiBaseIsLocal = isLocalhost(base);
+      if (primaryUrl && (!apiBaseIsLocal || !frontendIsRemote)) {
         try {
           const json = await tryUpload(primaryUrl);
           const url = json?.url || json?.data?.url;
