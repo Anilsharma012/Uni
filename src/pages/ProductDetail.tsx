@@ -39,6 +39,7 @@ type P = {
   stock?: number;
   image_url?: string;
   images?: string[];
+  sizes?: string[];
 };
 
 const ProductDetail = () => {
