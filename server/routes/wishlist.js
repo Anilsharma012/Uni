@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 // List current user's wishlist
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const docs = await Wishlist.find({ userId: req.user._id }).lean();
+    const docs = await Wishlist.find({ userId: req.user._id }).populate('productId').lean();
     return res.json({ ok: true, data: docs });
   } catch (e) {
     console.error(e);
