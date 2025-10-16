@@ -22,6 +22,7 @@ import {
   Users2,
   CreditCard,
   Truck,
+  Tags,
 } from 'lucide-react';
 import {
   Dialog,
