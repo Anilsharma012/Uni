@@ -624,6 +624,109 @@ const Admin = () => {
     }
   };
 
+  const uploadQrCode = async (file: File) => {
+    if (!file) return;
+    setUploadingQrCode(true);
+
+    const isLocalhost = (url: string) => {
+      try {
+        return url.includes('localhost') || url.includes('127.0.0.1');
+      } catch {
+        return false;
+      }
+    };
+
+    const tryUpload = async (uploadUrl: string) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+          body: fd,
+        });
+        let json: any = null;
+        try { json = await res.json(); } catch {}
+        if (!res.ok) throw new Error(json?.message || json?.error || `${res.status} ${res.statusText}`);
+        return json;
+      } catch (err: any) {
+        throw new Error(err?.message || String(err));
+      }
+    };
+
+    try {
+      const base = API_BASE || '';
+      const baseNormalized = base.endsWith('/') ? base.slice(0, -1) : base;
+      const primaryUrl = base ? `${baseNormalized}/api/uploads` : '';
+
+      if (base && isLocalhost(base) && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+        try {
+          const relJson = await tryUpload('/api/uploads');
+          const url = relJson?.url || relJson?.data?.url;
+          const full = url && url.startsWith('http') ? url : (url ? url : '');
+          setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+          toast.success('QR Code uploaded');
+          return;
+        } catch (relErr) {
+          console.warn('Relative upload failed, falling back to API_BASE upload:', relErr?.message || relErr);
+        }
+      }
+
+      if (primaryUrl) {
+        try {
+          const json = await tryUpload(primaryUrl);
+          const url = json?.url || json?.data?.url;
+          if (url) {
+            const full = url.startsWith('http') ? url : `${baseNormalized}${url}`;
+            setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+            toast.success('QR Code uploaded');
+            return;
+          }
+        } catch (primaryErr: any) {
+          console.warn('Primary upload failed:', primaryErr?.message || primaryErr);
+
+          try {
+            if (primaryUrl.startsWith('http:') && location.protocol === 'https:') {
+              const httpsUrl = primaryUrl.replace(/^http:/, 'https:');
+              const json2 = await tryUpload(httpsUrl);
+              const url2 = json2?.url || json2?.data?.url;
+              if (url2) {
+                const full = url2.startsWith('http') ? url2 : `${httpsUrl}${url2}`;
+                setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+                toast.success('QR Code uploaded (via https fallback)');
+                return;
+              }
+            }
+          } catch (httpsErr: any) {
+            console.warn('HTTPS fallback failed:', httpsErr?.message || httpsErr);
+          }
+        }
+      }
+
+      try {
+        const relJson2 = await tryUpload('/api/uploads');
+        const url = relJson2?.url || relJson2?.data?.url;
+        const full = url && url.startsWith('http') ? url : (url ? url : '');
+        setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+        toast.success('QR Code uploaded (via relative /api)');
+        return;
+      } catch (finalRelErr) {
+        console.warn('Relative /api upload failed as last resort:', finalRelErr?.message || finalRelErr);
+      }
+
+      toast.error('QR Code upload failed');
+    } catch (err: any) {
+      toast.error(err?.message || 'QR Code upload failed');
+      console.warn('uploadQrCode error:', err);
+    } finally {
+      setUploadingQrCode(false);
+    }
+  };
+
 const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
