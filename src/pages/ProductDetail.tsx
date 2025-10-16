@@ -50,6 +50,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<P | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>('');
 
   useEffect(() => {
     (async () => {
@@ -70,7 +71,15 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img };
+    // If product defines sizes, require selection
+    if (Array.isArray(product?.sizes) && product.sizes.length > 0 && !selectedSize) {
+      toast({ title: 'Select a size', description: 'Please choose a size before adding to cart.', variant: 'destructive' });
+      return;
+    }
+
+    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img, meta: {} as any };
+    if (selectedSize) item.meta.size = selectedSize;
+
     if (!user) {
       try { localStorage.setItem('uni_add_intent', JSON.stringify({ item, qty: quantity })); } catch {}
       navigate('/auth');
