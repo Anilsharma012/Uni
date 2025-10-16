@@ -75,6 +75,7 @@ const NAV_ITEMS = [
   { id: 'products', label: 'Products', icon: Package },
   { id: 'orders', label: 'Orders', icon: Receipt },
   { id: 'users', label: 'Users', icon: Users2 },
+  { id: 'categories', label: 'Categories', icon: Package },
   { id: 'payment', label: 'Payment Settings', icon: CreditCard },
   { id: 'shiprocket', label: 'Shiprocket Settings', icon: Truck },
 ] as const;
@@ -303,6 +304,7 @@ type ProductFormState = {
   image_url: string;
   category: string;
   stock: number;
+  sizes: string[];
 };
 
 const EMPTY_FORM: ProductFormState = {
@@ -312,6 +314,7 @@ const EMPTY_FORM: ProductFormState = {
   image_url: '',
   category: '',
   stock: 0,
+  sizes: [],
 };
 
 const Admin = () => {
@@ -342,6 +345,15 @@ const Admin = () => {
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingShiprocket, setSavingShiprocket] = useState(false);
 
+  // Categories for products
+  const [categories, setCategories] = useState<Array<{ _id?: string; name: string }>>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDesc, setNewCategoryDesc] = useState('');
+
+  // helper for product sizes input
+  const [customSizeInput, setCustomSizeInput] = useState('');
+
   const totalSalesFormatted = useMemo(
     () => `₹${stats.totalSales.toLocaleString('en-IN')}`,
     [stats.totalSales],
@@ -361,6 +373,7 @@ const Admin = () => {
       image_url: product.image_url ?? (Array.isArray(product.images) ? product.images[0] : '') ?? '',
       category: product.category ?? '',
       stock: Number(product.stock ?? 0),
+      sizes: Array.isArray(product.attributes?.sizes) ? product.attributes.sizes : (Array.isArray((product as any).sizes) ? (product as any).sizes : []),
     });
     setIsDialogOpen(true);
   };
@@ -387,6 +400,7 @@ const Admin = () => {
 
     void fetchAdminResources();
     void fetchIntegrationSettings();
+    void fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading, adminUser]);
 
@@ -446,6 +460,44 @@ const Admin = () => {
       setSettings(createDefaultSettings());
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const data = await apiFetch<any[]>('/api/categories');
+      if (Array.isArray(data)) setCategories(data.map((c) => ({ _id: c._id, name: c.name })));
+    } catch (err: any) {
+      console.warn('Failed to fetch categories:', err?.message || err);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const handleCreateCategory = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newCategoryName.trim()) return toast.error('Category name required');
+    try {
+      const created = await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify({ name: newCategoryName.trim(), description: newCategoryDesc.trim() }) });
+      toast.success('Category added');
+      setNewCategoryName('');
+      setNewCategoryDesc('');
+      void fetchCategories();
+    } catch (err: any) {
+      toast.error(`Failed to create category: ${err?.message ?? 'Unknown'}`);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Deactivate this category?')) return;
+    try {
+      await apiFetch(`/api/categories/${id}`, { method: 'DELETE' });
+      toast.success('Category deactivated');
+      void fetchCategories();
+    } catch (err: any) {
+      toast.error(`Failed to deactivate category: ${err?.message ?? 'Unknown'}`);
     }
   };
 
@@ -585,6 +637,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         image_url: productForm.image_url.trim(),
         category: productForm.category.trim(),
         stock,
+        attributes: { sizes: productForm.sizes },
       };
 
       if (editingProduct) {
@@ -871,14 +924,55 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                   </div>
                 </div>
               </div>
-              <div>
+                      <div>
                 <Label htmlFor="category">Category</Label>
-                <Input
+                <select
                   id="category"
                   value={productForm.category}
                   onChange={(e) => setProductForm((p) => ({ ...p, category: e.target.value }))}
-                  required
-                />
+                  className="w-full rounded border border-border bg-input px-2 py-2"
+                >
+                  <option value="">-- Uncategorised --</option>
+                  {categories.map((c) => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">Add/manage categories from the sidebar &gt; Categories</p>
+              </div>
+
+              <div>
+                <Label>Sizes</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['S','M','L','XL','XXL'].map((sz) => {
+                    const active = productForm.sizes.includes(sz);
+                    return (
+                      <button
+                        type="button"
+                        key={sz}
+                        onClick={() => setProductForm((p) => ({ ...p, sizes: active ? p.sizes.filter((x) => x !== sz) : [...p.sizes, sz] }))}
+                        className={`px-2 py-1 rounded border ${active ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    placeholder="Add custom size (e.g. XS)"
+                    value={customSizeInput}
+                    onChange={(e) => setCustomSizeInput(e.target.value)}
+                  />
+                  <Button type="button" onClick={() => {
+                    const v = customSizeInput.trim();
+                    if (!v) return;
+                    setProductForm((p) => ({ ...p, sizes: Array.from(new Set([...p.sizes, v])) }));
+                    setCustomSizeInput('');
+                  }}>Add</Button>
+                </div>
+                {productForm.sizes.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">Selected sizes: {productForm.sizes.join(', ')}</p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={saving}>
