@@ -31,11 +31,11 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Remove
-router.delete('/:productId', requireAuth, async (req, res) => {
+// Remove by wishlist item ID
+router.delete('/:itemId', requireAuth, async (req, res) => {
   try {
-    const { productId } = req.params;
-    await Wishlist.findOneAndDelete({ userId: req.user._id, productId });
+    const { itemId } = req.params;
+    await Wishlist.findOneAndDelete({ _id: itemId, userId: req.user._id });
     return res.json({ ok: true });
   } catch (e) {
     console.error(e);
