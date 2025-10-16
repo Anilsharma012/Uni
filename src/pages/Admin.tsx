@@ -956,6 +956,27 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                 </div>
               </div>
 
+              <div>
+                <Label>Sizes</Label>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {['S','M','L','XL','XXL'].map((sz) => (
+                    <label key={sz} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={productForm.sizes.includes(sz)}
+                        onCheckedChange={(checked) => {
+                          const isOn = Boolean(checked);
+                          setProductForm((p) => ({
+                            ...p,
+                            sizes: isOn ? Array.from(new Set([...(p.sizes || []), sz])) : (p.sizes || []).filter((s) => s !== sz),
+                          }));
+                        }}
+                      />
+                      <span>{sz}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingProduct ? 'Update Product' : 'Add Product'}
