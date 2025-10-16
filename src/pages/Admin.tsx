@@ -929,12 +929,31 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               </div>
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
+                <Select
                   value={productForm.category}
-                  onChange={(e) => setProductForm((p) => ({ ...p, category: e.target.value }))}
-                  required
-                />
+                  onValueChange={(val) => setProductForm((p) => ({ ...p, category: val }))}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c: any) => (
+                      <SelectItem key={(c as any)._id || (c as any).id || (c as any).name} value={(c as any).name}>
+                        {(c as any).name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Can't find it?{' '}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => { setActiveSection('categories'); setIsDialogOpen(false); }}
+                  >
+                    Add a new category
+                  </button>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={saving}>
