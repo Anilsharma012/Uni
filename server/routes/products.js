@@ -87,10 +87,14 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (typeof body.description !== 'undefined') updates.description = body.description;
     if (typeof body.price !== 'undefined') updates.price = Number(body.price);
     if (typeof body.category !== 'undefined') updates.category = body.category;
+    if (typeof body.categoryName !== 'undefined') updates.category = body.categoryName;
+    if (typeof body.categoryId !== 'undefined') updates.categoryId = body.categoryId;
+    if (typeof body.category_id !== 'undefined') updates.categoryId = body.category_id;
     if (typeof body.stock !== 'undefined') updates.stock = Number(body.stock);
     if (typeof body.active !== 'undefined') updates.active = !!body.active;
     if (typeof body.image_url !== 'undefined') updates.images = [body.image_url];
     if (Array.isArray(body.images)) updates.images = body.images;
+    if (Array.isArray(body.sizes)) updates.sizes = body.sizes;
 
     const doc = await Product.findByIdAndUpdate(id, updates, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
