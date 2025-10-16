@@ -56,6 +56,7 @@ type PaymentSettingsForm = {
   manualPaymentEnabled: boolean;
   manualPaymentInstructions: string;
   manualPaymentContact: string;
+  upiQrCode: string;
 };
 
 type ShiprocketSettingsForm = {
