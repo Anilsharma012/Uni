@@ -45,7 +45,7 @@ ProductSchema.pre('save', function (next) {
     this.image_url = this.images[0];
   }
   if (Array.isArray(this.sizes)) {
-    this.sizes = this.sizes; // trigger setter for sanitization
+    this.sizes = normalizeSizes(this.sizes);
   }
   next();
 });
