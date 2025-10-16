@@ -56,7 +56,7 @@ ProductSchema.pre('findOneAndUpdate', function (next) {
     update.slug = slugify(update.title, { lower: true, strict: true });
   }
   if (update && Array.isArray(update.sizes)) {
-    update.sizes = ProductSchema.path('sizes').cast(update.sizes);
+    update.sizes = normalizeSizes(update.sizes);
   }
   next();
 });
