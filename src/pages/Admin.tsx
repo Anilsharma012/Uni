@@ -151,6 +151,10 @@ function normalizeSettings(raw: any): IntegrationSettings {
         typeof raw?.payment?.manualPaymentContact === 'string' && raw.payment.manualPaymentContact.trim()
           ? raw.payment.manualPaymentContact.trim()
           : defaults.payment.manualPaymentContact,
+      upiQrCode:
+        typeof raw?.payment?.upiQrCode === 'string'
+          ? raw.payment.upiQrCode
+          : defaults.payment.upiQrCode,
     },
     shipping: {
       shiprocket: {
