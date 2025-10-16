@@ -104,6 +104,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (typeof body.active !== 'undefined') updates.active = !!body.active;
     if (typeof body.image_url !== 'undefined') updates.images = [body.image_url];
     if (Array.isArray(body.images)) updates.images = body.images;
+    if (typeof body.attributes !== 'undefined') updates.attributes = body.attributes;
 
     const doc = await Product.findByIdAndUpdate(id, updates, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
