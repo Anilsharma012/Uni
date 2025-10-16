@@ -13,6 +13,8 @@ const wishlistRoutes = require('./routes/wishlist');
 const reviewsRoutes = require('./routes/reviews');
 const settingsRoutes = require('./routes/settings');
 const uploadsRoutes = require('./routes/uploads');
+const adminCategoryRoutes = require('./routes/admin/categories');
+const adminProductRoutes = require('./routes/admin/products');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
