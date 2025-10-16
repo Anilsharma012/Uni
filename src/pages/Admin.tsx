@@ -1412,6 +1412,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         return renderOverview();
       case 'products':
         return renderProducts();
+      case 'categories':
+        return renderCategories();
       case 'orders':
         return renderOrders();
       case 'users':
