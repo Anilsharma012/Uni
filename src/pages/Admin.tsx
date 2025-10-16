@@ -1049,6 +1049,60 @@ const handleProductSubmit = async (e: React.FormEvent) => {
     </div>
   );
 
+  const renderCategories = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Categories</h2>
+          <p className="text-sm text-muted-foreground">Add or remove product categories. These show in the product form.</p>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={addCategory} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-1">
+              <Label htmlFor="catName">Name</Label>
+              <Input id="catName" value={catName} onChange={(e)=>setCatName(e.target.value)} required />
+            </div>
+            <div className="md:col-span-1">
+              <Label htmlFor="catDesc">Description</Label>
+              <Input id="catDesc" value={catDesc} onChange={(e)=>setCatDesc(e.target.value)} />
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit" disabled={catSaving}>
+                {catSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Category
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3">
+        {categories.length === 0 && (
+          <p className="text-sm text-muted-foreground">No categories yet.</p>
+        )}
+        {categories.map((c: any) => (
+          <Card key={(c as any)._id || (c as any).id}>
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <h3 className="font-semibold">{(c as any).name}</h3>
+                {(c as any).description && <p className="text-sm text-muted-foreground">{(c as any).description}</p>}
+              </div>
+              <Button size="icon" variant="destructive" onClick={() => deleteCategory(((c as any)._id || (c as any).id) as any)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
   const renderOrders = () => (
     <div className="space-y-6">
       <div>
