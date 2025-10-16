@@ -46,14 +46,15 @@ const Wishlist = () => {
     }
   };
 
-  const removeFromWishlist = async (id: string) => {
+  const removeFromWishlist = async (itemId: string) => {
     try {
-      const { ok, json } = await api(`/api/wishlist/${id}`, { method: 'DELETE' });
+      const { ok, json } = await api(`/api/wishlist/${itemId}`, { method: 'DELETE' });
       if (!ok) throw new Error(json?.message || json?.error || 'Failed to remove item');
       toast.success('Removed from wishlist');
-      fetchWishlist();
+      setWishlistItems((prev) => prev.filter((item) => item._id !== itemId));
     } catch (e: any) {
       toast.error(e?.message || 'Failed to remove item');
+      fetchWishlist();
     }
   };
 
