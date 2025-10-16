@@ -16,6 +16,7 @@ router.get('/', authOptional, async (req, res) => {
     } // when active is 'all', do not set filter.active
 
     if (category) filter.category = category;
+    if (categoryId) filter.categoryId = categoryId;
     if (q) filter.$or = [{ title: new RegExp(q, 'i') }, { category: new RegExp(q, 'i') }];
 
     const l = Math.min(200, Number(limit) || 50);
