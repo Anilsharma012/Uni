@@ -401,6 +401,7 @@ const Admin = () => {
 
     void fetchAdminResources();
     void fetchIntegrationSettings();
+    void fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading, adminUser]);
 
