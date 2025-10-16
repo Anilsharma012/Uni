@@ -467,7 +467,7 @@ const Admin = () => {
     try {
       setCategoriesLoading(true);
       const data = await apiFetch<any[]>('/api/categories');
-      if (Array.isArray(data)) setCategories(data.map((c) => ({ _id: c._id, name: c.name })));
+      if (Array.isArray(data)) setCategories(data.map((c) => ({ _id: c._id, name: c.name, description: c.description || '' })));
     } catch (err: any) {
       console.warn('Failed to fetch categories:', err?.message || err);
       setCategories([]);
@@ -1348,6 +1348,71 @@ const handleProductSubmit = async (e: React.FormEvent) => {
     </div>
   );
 
+  const renderCategories = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Categories</h2>
+        <p className="text-sm text-muted-foreground">Create and manage product categories. Categories appear in the Add Product form.</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Category</CardTitle>
+          <CardDescription>Create a new category for products.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(e) => { e.preventDefault(); void handleCreateCategory(); }} className="space-y-4">
+            <div>
+              <Label htmlFor="catName">Name</Label>
+              <Input id="catName" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="catDesc">Description</Label>
+              <Textarea id="catDesc" value={newCategoryDesc} onChange={(e) => setNewCategoryDesc(e.target.value)} rows={3} />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit">Add Category</Button>
+              <Button type="button" variant="outline" onClick={() => { setNewCategoryName(''); setNewCategoryDesc(''); }}>Reset</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Existing Categories</CardTitle>
+          <CardDescription>Deactivate categories you no longer use.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {categoriesLoading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : categories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No categories created yet.</p>
+          ) : (
+            <div className="grid gap-2">
+              {categories.map((c) => (
+                <div key={c._id} className="flex items-center justify-between p-2 border border-border rounded">
+                  <div>
+                    <div className="font-medium">{c.name}</div>
+                    {c.description && <div className="text-sm text-muted-foreground">{c.description}</div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { setNewCategoryName(c.name); setNewCategoryDesc(c.description || ''); setActiveSection('categories'); }}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => { if (c._id) void handleDeleteCategory(c._id); }}>
+                      Deactivate
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
@@ -1358,6 +1423,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         return renderOrders();
       case 'users':
         return renderUsers();
+      case 'categories':
+        return renderCategories();
       case 'payment':
         return renderPaymentSettings();
       case 'shiprocket':
