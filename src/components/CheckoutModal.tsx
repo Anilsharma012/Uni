@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,8 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [payment, setPayment] = useState<"COD" | "UPI" | "Card">("COD");
+  const [upiQrCode, setUpiQrCode] = useState<string | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
 
   // Consistent field styles to ensure text is visible
   const fieldBase =
