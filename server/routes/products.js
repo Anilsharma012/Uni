@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const slugify = require('slugify');
 const { authOptional, requireAuth, requireAdmin } = require('../middleware/auth');
 
 // List products: supports active, category, q
@@ -51,8 +52,18 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     const price = typeof body.price !== 'undefined' ? Number(body.price) : undefined;
     if (!title || typeof price === 'undefined') return res.status(400).json({ ok: false, message: 'Missing fields' });
 
+    // Generate a unique slug to avoid duplicate key errors
+    const baseSlug = slugify(title, { lower: true, strict: true }) || `prod-${Date.now()}`;
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Product.exists({ slug })) {
+      slug = `${baseSlug}-${counter}`;
+      counter += 1;
+    }
+
     const payload = {
       title,
+      slug,
       price,
       category: body.category || undefined,
       stock: typeof body.stock !== 'undefined' ? Number(body.stock) : 0,
@@ -70,6 +81,10 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     return res.json({ ok: true, data: doc });
   } catch (e) {
     console.error(e);
+    // If duplicate key still occurs, return a 409 with helpful message
+    if (e && e.code === 11000 && e.keyValue && e.keyValue.slug) {
+      return res.status(409).json({ ok: false, message: 'Duplicate slug', slug: e.keyValue.slug });
+    }
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
