@@ -56,6 +56,7 @@ type PaymentSettingsForm = {
   manualPaymentEnabled: boolean;
   manualPaymentInstructions: string;
   manualPaymentContact: string;
+  upiQrCode: string;
 };
 
 type ShiprocketSettingsForm = {
@@ -93,6 +94,7 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     manualPaymentInstructions:
       'Bank Transfer (Account Name: UNI10 Pvt Ltd, Account No: 1234567890, IFSC: HDFC0001234) or UPI: uni10@upi. Share the payment confirmation at payments@uni10.in.',
     manualPaymentContact: 'payments@uni10.in',
+    upiQrCode: '',
   };
 }
 
@@ -149,6 +151,10 @@ function normalizeSettings(raw: any): IntegrationSettings {
         typeof raw?.payment?.manualPaymentContact === 'string' && raw.payment.manualPaymentContact.trim()
           ? raw.payment.manualPaymentContact.trim()
           : defaults.payment.manualPaymentContact,
+      upiQrCode:
+        typeof raw?.payment?.upiQrCode === 'string'
+          ? raw.payment.upiQrCode
+          : defaults.payment.upiQrCode,
     },
     shipping: {
       shiprocket: {
@@ -352,6 +358,7 @@ const Admin = () => {
   const [shiprocketForm, setShiprocketForm] = useState<ShiprocketSettingsForm>(createDefaultShiprocketSettings);
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingShiprocket, setSavingShiprocket] = useState(false);
+  const [uploadingQrCode, setUploadingQrCode] = useState(false);
 
   const totalSalesFormatted = useMemo(
     () => `₹${stats.totalSales.toLocaleString('en-IN')}`,
@@ -614,6 +621,109 @@ const Admin = () => {
       console.warn('uploadFile error:', err);
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const uploadQrCode = async (file: File) => {
+    if (!file) return;
+    setUploadingQrCode(true);
+
+    const isLocalhost = (url: string) => {
+      try {
+        return url.includes('localhost') || url.includes('127.0.0.1');
+      } catch {
+        return false;
+      }
+    };
+
+    const tryUpload = async (uploadUrl: string) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+          body: fd,
+        });
+        let json: any = null;
+        try { json = await res.json(); } catch {}
+        if (!res.ok) throw new Error(json?.message || json?.error || `${res.status} ${res.statusText}`);
+        return json;
+      } catch (err: any) {
+        throw new Error(err?.message || String(err));
+      }
+    };
+
+    try {
+      const base = API_BASE || '';
+      const baseNormalized = base.endsWith('/') ? base.slice(0, -1) : base;
+      const primaryUrl = base ? `${baseNormalized}/api/uploads` : '';
+
+      if (base && isLocalhost(base) && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+        try {
+          const relJson = await tryUpload('/api/uploads');
+          const url = relJson?.url || relJson?.data?.url;
+          const full = url && url.startsWith('http') ? url : (url ? url : '');
+          setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+          toast.success('QR Code uploaded');
+          return;
+        } catch (relErr) {
+          console.warn('Relative upload failed, falling back to API_BASE upload:', relErr?.message || relErr);
+        }
+      }
+
+      if (primaryUrl) {
+        try {
+          const json = await tryUpload(primaryUrl);
+          const url = json?.url || json?.data?.url;
+          if (url) {
+            const full = url.startsWith('http') ? url : `${baseNormalized}${url}`;
+            setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+            toast.success('QR Code uploaded');
+            return;
+          }
+        } catch (primaryErr: any) {
+          console.warn('Primary upload failed:', primaryErr?.message || primaryErr);
+
+          try {
+            if (primaryUrl.startsWith('http:') && location.protocol === 'https:') {
+              const httpsUrl = primaryUrl.replace(/^http:/, 'https:');
+              const json2 = await tryUpload(httpsUrl);
+              const url2 = json2?.url || json2?.data?.url;
+              if (url2) {
+                const full = url2.startsWith('http') ? url2 : `${httpsUrl}${url2}`;
+                setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+                toast.success('QR Code uploaded (via https fallback)');
+                return;
+              }
+            }
+          } catch (httpsErr: any) {
+            console.warn('HTTPS fallback failed:', httpsErr?.message || httpsErr);
+          }
+        }
+      }
+
+      try {
+        const relJson2 = await tryUpload('/api/uploads');
+        const url = relJson2?.url || relJson2?.data?.url;
+        const full = url && url.startsWith('http') ? url : (url ? url : '');
+        setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+        toast.success('QR Code uploaded (via relative /api)');
+        return;
+      } catch (finalRelErr) {
+        console.warn('Relative /api upload failed as last resort:', finalRelErr?.message || finalRelErr);
+      }
+
+      toast.error('QR Code upload failed');
+    } catch (err: any) {
+      toast.error(err?.message || 'QR Code upload failed');
+      console.warn('uploadQrCode error:', err);
+    } finally {
+      setUploadingQrCode(false);
     }
   };
 
@@ -1294,6 +1404,38 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                 disabled={settingsLoading || savingPayment}
                 required
               />
+            </div>
+
+            <div className="border-t border-border pt-5">
+              <Label className="font-medium mb-3 block">UPI QR Code</Label>
+              <p className="text-sm text-muted-foreground mb-4">Upload your UPI QR code image to display during checkout when customers select UPI as payment method.</p>
+
+              <div className="space-y-3">
+                {paymentForm.upiQrCode && (
+                  <div className="border border-border rounded p-3 bg-muted">
+                    <p className="text-xs text-muted-foreground mb-2">Current QR Code:</p>
+                    <img src={paymentForm.upiQrCode} alt="UPI QR Code" className="w-32 h-32 object-contain" />
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    id="qr_file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadQrCode(f);
+                      e.currentTarget.value = '';
+                    }}
+                    disabled={uploadingQrCode || settingsLoading || savingPayment}
+                    className="flex-1"
+                  />
+                  <Button type="button" disabled={uploadingQrCode || settingsLoading || savingPayment} variant="outline">
+                    {uploadingQrCode ? 'Uploading...' : 'Upload QR'}
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <Button type="submit" disabled={savingPayment || settingsLoading} className="w-full md:w-auto">

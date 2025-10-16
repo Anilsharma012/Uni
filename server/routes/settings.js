@@ -51,6 +51,9 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
       if (typeof payment.manualPaymentContact === 'string') {
         set['payment.manualPaymentContact'] = payment.manualPaymentContact.trim();
       }
+      if (typeof payment.upiQrCode === 'string') {
+        set['payment.upiQrCode'] = payment.upiQrCode.trim();
+      }
     }
 
     if (body.shipping && typeof body.shipping === 'object') {

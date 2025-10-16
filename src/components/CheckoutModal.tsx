@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,10 +28,59 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [payment, setPayment] = useState<"COD" | "UPI" | "Card">("COD");
+  const [upiQrCode, setUpiQrCode] = useState<string | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
+
+  // Fetch UPI QR code when modal opens
+  useEffect(() => {
+    if (open && payment === "UPI" && !upiQrCode && !loadingQr) {
+      fetchUpiQrCode();
+    }
+  }, [open, payment]);
+
+  const fetchUpiQrCode = async () => {
+    try {
+      setLoadingQr(true);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch('/api/settings', {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {}
+
+      if (response.ok && data?.data?.payment?.upiQrCode) {
+        setUpiQrCode(data.data.payment.upiQrCode);
+      }
+    } catch (error) {
+      console.error('Failed to fetch UPI QR code:', error);
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  // Consistent field styles to ensure text is visible
+  const fieldBase =
+    "w-full border border-border rounded px-3 py-2 " +
+    "text-foreground placeholder:text-muted-foreground bg-background " +
+    "focus:outline-none focus:ring-2 focus:ring-ring " +
+    "disabled:opacity-50 disabled:cursor-not-allowed";
 
   const handlePlaceOrder = async () => {
     if (!name || !phone || !address) {
-      toast({ title: "Please fill name, phone and address", variant: "destructive" });
+      toast({
+        title: "Please fill name, phone and address",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -31,7 +88,14 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
     const payload = {
       customer: { name, phone, address },
       payment_method: payment,
-      items: items.map((i) => ({ id: i.id, title: i.title, price: i.price, qty: i.qty, meta: i.meta, image: i.image })),
+      items: items.map((i) => ({
+        id: i.id,
+        title: i.title,
+        price: i.price,
+        qty: i.qty,
+        meta: i.meta,
+        image: i.image,
+      })),
       total,
       created_at: new Date().toISOString(),
     };
@@ -52,7 +116,13 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           payment: payment,
           status,
           createdAt: new Date().toISOString(),
-          items: items.map((i) => ({ id: i.id, title: i.title, price: i.price, qty: i.qty, image: i.image })),
+          items: items.map((i) => ({
+            id: i.id,
+            title: i.title,
+            price: i.price,
+            qty: i.qty,
+            image: i.image,
+          })),
         };
         localStorage.setItem("uni_orders_v1", JSON.stringify([order, ...arr]));
         localStorage.setItem("uni_last_order_id", newOrderId);
@@ -60,13 +130,24 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         console.error("Failed to persist local order", e);
       }
 
-      toast({ title: "Order placed", description: `Order #${newOrderId} placed successfully` });
-      try { window.dispatchEvent(new CustomEvent('order:placed', { detail: { id: newOrderId } })); } catch {}
+      toast({
+        title: "Order placed",
+        description: `Order #${newOrderId} placed successfully`,
+      });
+      try {
+        window.dispatchEvent(
+          new CustomEvent("order:placed", { detail: { id: newOrderId } })
+        );
+      } catch { }
       clearCart();
       setOpen(false);
       navigate("/dashboard", { replace: true });
     } else {
-      toast({ title: "Order failed", description: String(res.error ?? "Unknown error"), variant: "destructive" });
+      toast({
+        title: "Order failed",
+        description: String(res.error ?? "Unknown error"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -80,44 +161,142 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
 
         <div className="space-y-4 mt-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-border rounded px-3 py-2" />
+            <label className="block text-sm font-medium mb-1" htmlFor="name">
+              Name
+            </label>
+            <input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={fieldBase}
+              autoComplete="name"
+              placeholder="Your full name"
+              type="text"
+            />
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Phone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-border rounded px-3 py-2" />
+            <label className="block text-sm font-medium mb-1" htmlFor="phone">
+              Phone
+            </label>
+            <input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={fieldBase}
+              autoComplete="tel"
+              inputMode="numeric"
+              placeholder="9876543210"
+              type="tel"
+            />
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Address</label>
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} className="w-full border border-border rounded px-3 py-2" rows={3} />
+            <label
+              className="block text-sm font-medium mb-1"
+              htmlFor="address"
+            >
+              Address
+            </label>
+            <textarea
+              id="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className={fieldBase + " min-h-[96px]"}
+              rows={3}
+              autoComplete="street-address"
+              placeholder="House no., Street, City, Pincode"
+            />
           </div>
+
           <div>
             <label className="block text-sm font-medium mb-2">Payment</label>
             <div className="flex gap-3">
               <label className="flex items-center gap-2">
-                <input type="radio" name="payment" checked={payment === "COD"} onChange={() => setPayment("COD")} />
+                <input
+                  className="accent-primary"
+                  type="radio"
+                  name="payment"
+                  checked={payment === "COD"}
+                  onChange={() => {
+                    setPayment("COD");
+                    setUpiQrCode(null);
+                  }}
+                />
                 <span className="text-sm">Cash on Delivery</span>
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="payment" checked={payment === "UPI"} onChange={() => setPayment("UPI")} />
+                <input
+                  className="accent-primary"
+                  type="radio"
+                  name="payment"
+                  checked={payment === "UPI"}
+                  onChange={() => {
+                    setPayment("UPI");
+                    if (!upiQrCode && !loadingQr) {
+                      fetchUpiQrCode();
+                    }
+                  }}
+                />
                 <span className="text-sm">UPI</span>
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="payment" checked={payment === "Card"} onChange={() => setPayment("Card")} />
+                <input
+                  className="accent-primary"
+                  type="radio"
+                  name="payment"
+                  checked={payment === "Card"}
+                  onChange={() => {
+                    setPayment("Card");
+                    setUpiQrCode(null);
+                  }}
+                />
                 <span className="text-sm">Card</span>
               </label>
             </div>
           </div>
+
+          {payment === "UPI" && (
+            <div className="border border-border rounded-lg p-4 bg-muted">
+              <p className="text-sm font-medium mb-3">Scan QR Code to Pay</p>
+              {loadingQr ? (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+                  Loading QR code...
+                </div>
+              ) : upiQrCode ? (
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={upiQrCode}
+                    alt="UPI QR Code"
+                    className="w-40 h-40 border border-border rounded p-1 bg-white"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">Scan with any UPI app</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+                  QR code not configured yet
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <div className="w-full flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground">Total</div>
-              <div className="font-bold">₹{total.toLocaleString("en-IN")}</div>
+              <div className="font-bold">
+                ₹{total.toLocaleString("en-IN")}
+              </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
+              <Button
+                variant="ghost"
+                onClick={() => setOpen(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
               <Button onClick={handlePlaceOrder} disabled={loading}>
                 {loading ? "Placing…" : "Place Order"}
               </Button>
