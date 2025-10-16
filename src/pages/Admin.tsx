@@ -77,6 +77,7 @@ type IntegrationSettings = {
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'products', label: 'Products', icon: Package },
+  { id: 'categories', label: 'Categories', icon: Tags },
   { id: 'orders', label: 'Orders', icon: Receipt },
   { id: 'users', label: 'Users', icon: Users2 },
   { id: 'payment', label: 'Payment Settings', icon: CreditCard },
