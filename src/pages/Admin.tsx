@@ -94,6 +94,7 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     manualPaymentInstructions:
       'Bank Transfer (Account Name: UNI10 Pvt Ltd, Account No: 1234567890, IFSC: HDFC0001234) or UPI: uni10@upi. Share the payment confirmation at payments@uni10.in.',
     manualPaymentContact: 'payments@uni10.in',
+    upiQrCode: '',
   };
 }
 
