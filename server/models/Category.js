@@ -16,8 +16,17 @@ const CategorySchema = new mongoose.Schema(
 );
 
 CategorySchema.pre('save', function (next) {
-  if (!this.slug && this.name) {
-    this.slug = String(this.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  if (this.name) {
+    this.slug = buildSlug(this.name);
+  }
+  next();
+});
+
+CategorySchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate() || {};
+  if (typeof update.name === 'string') {
+    update.slug = buildSlug(update.name);
+    this.setUpdate(update);
   }
   next();
 });
