@@ -56,7 +56,17 @@ const ProductDetail = () => {
       try {
         const { ok, json } = await api(`/api/products/${id}`);
         if (!ok) throw new Error(json?.message || json?.error || 'Failed to load product');
-        setProduct(json?.data as P);
+        const p = json?.data as P;
+        setProduct(p);
+        // extract sizes from attributes or legacy fields
+        const sizes = (p as any)?.attributes?.sizes || (p as any)?.sizes || [];
+        if (Array.isArray(sizes) && sizes.length > 0) {
+          setAvailableSizes(sizes.map(String));
+          setSelectedSize(String(sizes[0]));
+        } else {
+          setAvailableSizes([]);
+          setSelectedSize(null);
+        }
       } catch (e: any) {
         toast({ title: e?.message || 'Failed to load product', variant: 'destructive' });
       } finally {
