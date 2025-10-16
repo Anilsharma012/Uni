@@ -89,7 +89,7 @@ const ProductDetail = () => {
     toast({ title: 'Added to cart!', description: `${title} has been added to your cart.` });
   };
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading���</div>;
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading…</div>;
   if (!product) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
@@ -132,6 +132,27 @@ const ProductDetail = () => {
             <h1 className="text-4xl font-black tracking-tighter mb-4">{title}</h1>
             <p className="text-3xl font-bold mb-6">₹{Number(product.price || 0).toLocaleString('en-IN')}</p>
             <p className="text-muted-foreground mb-8">{product.description}</p>
+
+            {Array.isArray(product?.sizes) && product.sizes.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold mb-3">Size</label>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSelectedSize(sz)}
+                      className={cn(
+                        'px-3 py-1 rounded border',
+                        selectedSize === sz ? 'bg-primary text-primary-foreground border-primary' : 'bg-transparent border-border',
+                      )}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-8">
               <label className="block text-sm font-semibold mb-3">Quantity</label>
