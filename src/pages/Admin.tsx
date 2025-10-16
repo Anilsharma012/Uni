@@ -358,6 +358,7 @@ const Admin = () => {
   const [shiprocketForm, setShiprocketForm] = useState<ShiprocketSettingsForm>(createDefaultShiprocketSettings);
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingShiprocket, setSavingShiprocket] = useState(false);
+  const [uploadingQrCode, setUploadingQrCode] = useState(false);
 
   const totalSalesFormatted = useMemo(
     () => `₹${stats.totalSales.toLocaleString('en-IN')}`,
