@@ -120,6 +120,25 @@ const ProductDetail = () => {
             <p className="text-3xl font-bold mb-6">₹{Number(product.price || 0).toLocaleString('en-IN')}</p>
             <p className="text-muted-foreground mb-8">{product.description}</p>
 
+            {availableSizes.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold mb-3">Size</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSelectedSize(sz)}
+                      className={`px-3 py-1 rounded border ${selectedSize === sz ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+                {selectedSize && <p className="text-sm text-muted-foreground mt-2">Selected size: {selectedSize}</p>}
+              </div>
+            )}
+
             <div className="mb-8">
               <label className="block text-sm font-semibold mb-3">Quantity</label>
               <div className="flex items-center gap-4">
