@@ -31,6 +31,43 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [upiQrCode, setUpiQrCode] = useState<string | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
 
+  // Fetch UPI QR code when modal opens
+  useEffect(() => {
+    if (open && payment === "UPI" && !upiQrCode && !loadingQr) {
+      fetchUpiQrCode();
+    }
+  }, [open, payment]);
+
+  const fetchUpiQrCode = async () => {
+    try {
+      setLoadingQr(true);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch('/api/settings', {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {}
+
+      if (response.ok && data?.data?.payment?.upiQrCode) {
+        setUpiQrCode(data.data.payment.upiQrCode);
+      }
+    } catch (error) {
+      console.error('Failed to fetch UPI QR code:', error);
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
   // Consistent field styles to ensure text is visible
   const fieldBase =
     "w-full border border-border rounded px-3 py-2 " +
