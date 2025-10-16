@@ -33,6 +33,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '';
 // Using an empty API_BASE defaults to relative '/api' paths which works in preview where backend is proxied.
