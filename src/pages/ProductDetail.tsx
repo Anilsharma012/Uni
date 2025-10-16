@@ -80,7 +80,9 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img };
+    const item: any = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img };
+    if (selectedSize) item.meta = { size: selectedSize };
+
     if (!user) {
       try { localStorage.setItem('uni_add_intent', JSON.stringify({ item, qty: quantity })); } catch {}
       navigate('/auth');
