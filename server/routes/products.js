@@ -54,7 +54,8 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     const payload = {
       title,
       price,
-      category: body.category || undefined,
+      category: body.category || body.categoryName || undefined,
+      categoryId: body.categoryId || body.category_id || undefined,
       stock: typeof body.stock !== 'undefined' ? Number(body.stock) : 0,
       description: body.description || undefined,
       images: Array.isArray(body.images)
@@ -63,6 +64,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
         ? [body.image_url]
         : [],
       attributes: body.attributes || {},
+      sizes: Array.isArray(body.sizes) ? body.sizes : [],
       active: typeof body.active === 'boolean' ? body.active : true,
     };
 
