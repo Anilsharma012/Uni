@@ -48,6 +48,8 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<P | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
