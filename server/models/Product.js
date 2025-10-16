@@ -3,6 +3,17 @@ const slugify = require('slugify');
 
 const ALLOWED_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
+function normalizeSizes(list) {
+  if (!Array.isArray(list)) return [];
+  return Array.from(
+    new Set(
+      list
+        .map((item) => String(item || '').toUpperCase().trim())
+        .filter((item) => ALLOWED_SIZES.includes(item)),
+    ),
+  );
+}
+
 const ProductSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
