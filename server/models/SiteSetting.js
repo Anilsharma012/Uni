@@ -12,6 +12,7 @@ const PaymentSettingsSchema = new mongoose.Schema(
         'Bank Transfer (Account Name: UNI10 Pvt Ltd, Account No: 1234567890, IFSC: HDFC0001234) or UPI: uni10@upi. Share payment confirmation at payments@uni10.in.',
     },
     manualPaymentContact: { type: String, default: 'payments@uni10.in' },
+    upiQrCode: { type: String, default: '' },
   },
   { _id: false },
 );
