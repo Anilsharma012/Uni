@@ -193,78 +193,72 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     return `${base}${p}`;
   };
 
-  const url = path.startsWith('http') ? path : joinUrl(API_BASE, path);
+  const rawUrl = path.startsWith('http') ? path : joinUrl(API_BASE, path);
 
-  // If API_BASE points to localhost but the app is not running on localhost, attempt a relative '/api' fallback
-  if (
-    API_BASE &&
-    isLocalhost(API_BASE) &&
-    !location.hostname.includes('localhost') &&
-    !location.hostname.includes('127.0.0.1')
-  ) {
-    console.warn(`API_BASE is '${API_BASE}' (localhost). Frontend running on '${location.hostname}' — trying relative '/api' fallback for ${path}`);
-    const relUrl = path.startsWith('http')
-      ? path
-      : (path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`);
-
-    try {
-      const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
-      const relHeaders = { 'Content-Type': 'application/json', ...(options.headers || {}) } as Record<string,string>;
-      if (token) relHeaders['Authorization'] = `Bearer ${token}`;
-
-      const relRes = await fetch(relUrl, {
-        credentials: 'include',
-        headers: relHeaders,
-        ...options,
-      });
-
-      let relBody: any = null;
-      try { relBody = await relRes.json(); } catch {}
-
-      if (!relRes.ok) {
-        const msg = relBody?.message || relBody?.error || `${relRes.status} ${relRes.statusText}`;
-        throw new Error(msg);
-      }
-
-      if (relBody && typeof relBody === 'object' && relBody !== null && 'data' in relBody) {
-        return relBody.data as T;
-      }
-      return relBody as T;
-    } catch (relErr) {
-      console.warn('Relative /api fetch failed:', relErr?.message || relErr);
-      // Fall through and try API_BASE below
-    }
-  }
-
-  try {
+  // Helper to perform fetch with sensible defaults and credential handling
+  const doFetch = async (targetUrl: string) => {
     const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
     const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) } as Record<string,string>;
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(url, {
-      credentials: 'include',
-      headers,
-      ...options,
-    });
-
-    let body: any = null;
+    // Determine same-origin to decide whether to include credentials
+    let credentials: RequestCredentials = 'omit';
     try {
-      body = await res.json();
+      const targetOrigin = new URL(targetUrl, location.href).origin;
+      const currentOrigin = location.origin;
+      credentials = targetOrigin === currentOrigin ? 'include' : 'omit';
     } catch {
-      // ignore non-json
+      credentials = 'omit';
     }
 
+    const fetchOptions: RequestInit = {
+      ...options,
+      headers,
+      credentials,
+      // allow CORS by default for cross-origin requests
+      mode: credentials === 'include' ? (options.mode || 'same-origin') : (options.mode || 'cors'),
+    };
+
+    const res = await fetch(targetUrl, fetchOptions);
+    let body: any = null;
+    try { body = await res.json(); } catch {}
     if (!res.ok) {
       const msg = body?.message || body?.error || `${res.status} ${res.statusText}`;
       throw new Error(msg);
     }
-
-    if (body && typeof body === 'object' && body !== null && 'data' in body) {
-      return body.data as T;
-    }
+    if (body && typeof body === 'object' && body !== null && 'data' in body) return body.data as T;
     return body as T;
+  };
+
+  // If API_BASE points to localhost but the frontend is hosted elsewhere (preview), try a relative fallback first
+  if (API_BASE && isLocalhost(API_BASE) && typeof location !== 'undefined' && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+    console.warn(`API_BASE is '${API_BASE}' (localhost). Frontend running on '${location.hostname}' — trying relative '/api' fallback for ${path}`);
+    const relUrl = path.startsWith('http') ? path : (path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`);
+    try {
+      return await doFetch(relUrl);
+    } catch (relErr) {
+      console.warn('Relative /api fetch failed:', relErr?.message || relErr);
+      // continue to try rawUrl below
+    }
+  }
+
+  // Try the configured url. If mixed-content error is possible (https page -> http api), attempt https fallback
+  try {
+    return await doFetch(rawUrl);
   } catch (err) {
-    console.warn('Admin apiFetch network issue — using demo fallback for:', path, err?.message || err);
+    // If URL is http and page is https, try swapping to https
+    try {
+      if (typeof rawUrl === 'string' && rawUrl.startsWith('http:') && typeof location !== 'undefined' && location.protocol === 'https:') {
+        const httpsUrl = rawUrl.replace(/^http:/, 'https:');
+        console.warn('Attempting https fallback for API url:', httpsUrl);
+        return await doFetch(httpsUrl);
+      }
+    } catch (httpsErr) {
+      console.warn('HTTPS fallback failed:', httpsErr?.message || httpsErr);
+    }
+
+    console.warn('Admin apiFetch network issue — using demo fallback for:', path, (err as any)?.message || err);
+
     const p = path.toLowerCase();
     if (p.includes('/api/auth/users')) {
       return [
@@ -298,7 +292,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       return {} as T;
     }
 
-    // Unknown endpoint: return empty object instead of throwing to avoid uncaught rejections in preview
     return {} as T;
   }
 }
