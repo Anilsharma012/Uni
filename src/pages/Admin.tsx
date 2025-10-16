@@ -318,6 +318,7 @@ const EMPTY_FORM: ProductFormState = {
   image_url: '',
   category: '',
   stock: 0,
+  sizes: [],
 };
 
 const Admin = () => {
