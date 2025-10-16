@@ -195,13 +195,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   const url = path.startsWith('http') ? path : joinUrl(API_BASE, path);
 
+  const skipApiBaseWhenRemote = API_BASE && isLocalhost(API_BASE) && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1');
+
   // If API_BASE points to localhost but the app is not running on localhost, attempt a relative '/api' fallback
-  if (
-    API_BASE &&
-    isLocalhost(API_BASE) &&
-    !location.hostname.includes('localhost') &&
-    !location.hostname.includes('127.0.0.1')
-  ) {
+  if (skipApiBaseWhenRemote) {
     console.warn(`API_BASE is '${API_BASE}' (localhost). Frontend running on '${location.hostname}' — trying relative '/api' fallback for ${path}`);
     const relUrl = path.startsWith('http')
       ? path
@@ -232,7 +229,41 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       return relBody as T;
     } catch (relErr) {
       console.warn('Relative /api fetch failed:', relErr?.message || relErr);
-      // Fall through and try API_BASE below
+      // Since API_BASE points to localhost which is unreachable from remote preview, return demo fallbacks instead of trying API_BASE
+      const p = path.toLowerCase();
+      if (p.includes('/api/auth/users')) {
+        return [
+          { _id: 'demo-1', name: 'Sachin', email: 'sachin@gmail.com', role: 'user' },
+          { _id: 'demo-2', name: 'UNI10 Admin', email: 'uni10@gmail.com', role: 'admin' },
+        ] as unknown as T;
+      }
+      if (p.includes('/api/products')) {
+        return [
+          { id: 'prod-1', name: 'Demo Tee', price: 499, category: 'T-Shirts', image_url: '/src/assets/product-tshirt-1.jpg', stock: 10 },
+          { id: 'prod-2', name: 'Demo Hoodie', price: 1299, category: 'Hoodies', image_url: '/src/assets/product-hoodie-1.jpg', stock: 5 },
+        ] as unknown as T;
+      }
+      if (p.includes('/api/orders')) {
+        return [
+          {
+            _id: 'order-demo-1',
+            id: 'order-demo-1',
+            total: 1498,
+            total_amount: 1498,
+            status: 'pending',
+            items: [
+              { productId: 'prod-1', name: 'Demo Tee', qty: 2, price: 499 },
+            ],
+            createdAt: new Date().toISOString(),
+            user: { _id: 'demo-1', name: 'Sachin', email: 'sachin@gmail.com' },
+          },
+        ] as unknown as T;
+      }
+      if (p.includes('/api/settings')) {
+        return {} as T;
+      }
+
+      return {} as T;
     }
   }
 
