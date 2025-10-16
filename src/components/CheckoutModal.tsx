@@ -218,7 +218,10 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                   type="radio"
                   name="payment"
                   checked={payment === "COD"}
-                  onChange={() => setPayment("COD")}
+                  onChange={() => {
+                    setPayment("COD");
+                    setUpiQrCode(null);
+                  }}
                 />
                 <span className="text-sm">Cash on Delivery</span>
               </label>
@@ -228,7 +231,12 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                   type="radio"
                   name="payment"
                   checked={payment === "UPI"}
-                  onChange={() => setPayment("UPI")}
+                  onChange={() => {
+                    setPayment("UPI");
+                    if (!upiQrCode && !loadingQr) {
+                      fetchUpiQrCode();
+                    }
+                  }}
                 />
                 <span className="text-sm">UPI</span>
               </label>
@@ -238,12 +246,39 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                   type="radio"
                   name="payment"
                   checked={payment === "Card"}
-                  onChange={() => setPayment("Card")}
+                  onChange={() => {
+                    setPayment("Card");
+                    setUpiQrCode(null);
+                  }}
                 />
                 <span className="text-sm">Card</span>
               </label>
             </div>
           </div>
+
+          {payment === "UPI" && (
+            <div className="border border-border rounded-lg p-4 bg-muted">
+              <p className="text-sm font-medium mb-3">Scan QR Code to Pay</p>
+              {loadingQr ? (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+                  Loading QR code...
+                </div>
+              ) : upiQrCode ? (
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={upiQrCode}
+                    alt="UPI QR Code"
+                    className="w-40 h-40 border border-border rounded p-1 bg-white"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">Scan with any UPI app</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+                  QR code not configured yet
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
