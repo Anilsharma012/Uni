@@ -20,6 +20,8 @@ const resolveImage = (src?: string) => {
     if (API_BASE && !(isLocalBase && isHttpsPage)) {
       const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
       return s.startsWith('/') ? `${base}${s}` : `${base}/${s}`;
+    } else {
+      return s.startsWith('/') ? `/api${s}` : `/api/${s}`;
     }
   }
   return s;
