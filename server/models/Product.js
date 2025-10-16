@@ -28,13 +28,7 @@ const ProductSchema = new mongoose.Schema(
       type: [String],
       enum: ALLOWED_SIZES,
       default: [],
-      set: (list) => Array.isArray(list)
-        ? Array.from(new Set(
-            list
-              .map((item) => String(item || '').toUpperCase().trim())
-              .filter((item) => ALLOWED_SIZES.includes(item)),
-          ))
-        : [],
+      set: normalizeSizes,
     },
     stock: { type: Number, default: 0 },
     attributes: { type: Object, default: {} },
