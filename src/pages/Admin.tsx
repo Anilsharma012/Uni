@@ -640,6 +640,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         image_url: productForm.image_url.trim(),
         category: productForm.category.trim(),
         stock,
+        sizes: Array.isArray(productForm.sizes) ? productForm.sizes : [],
       };
 
       if (editingProduct) {
