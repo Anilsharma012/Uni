@@ -308,6 +308,7 @@ type ProductFormState = {
   image_url: string;
   category: string;
   stock: number;
+  sizes: string[];
 };
 
 const EMPTY_FORM: ProductFormState = {
