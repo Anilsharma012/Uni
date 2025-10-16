@@ -61,6 +61,15 @@ export const ProductCard = ({ id, name, price, image, category }: ProductCardPro
             alt={name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            onError={(e) => {
+              try {
+                const el = e.currentTarget as HTMLImageElement;
+                const cur = String(el.src || '');
+                const candidate = cur.includes('/api/uploads') ? cur.replace('/api/uploads', '/uploads') : (cur.includes('/uploads') ? `/api${cur}` : '/placeholder.svg');
+                if (candidate !== cur) el.src = candidate;
+                else el.src = '/placeholder.svg';
+              } catch { e.currentTarget.src = '/placeholder.svg'; }
+            }}
           />
         </div>
       </Link>
