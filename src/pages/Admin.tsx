@@ -464,6 +464,46 @@ const Admin = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const data = await apiFetch<any[]>(ENDPOINTS.categories);
+      const arr = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
+      setCategories(arr);
+    } catch (e: any) {
+      console.warn('Failed to load categories', e?.message || e);
+      setCategories([]);
+    }
+  };
+
+  const addCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+    try {
+      setCatSaving(true);
+      await apiFetch(ENDPOINTS.categories, { method: 'POST', body: JSON.stringify({ name: catName.trim(), description: catDesc.trim() }) });
+      toast.success('Category added');
+      setCatName('');
+      setCatDesc('');
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to add category');
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    const ok = confirm('Delete this category?');
+    if (!ok) return;
+    try {
+      await apiFetch(`${ENDPOINTS.categories}/${id}`, { method: 'DELETE' });
+      toast.success('Category deleted');
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete category');
+    }
+  };
+
   const uploadFile = async (file: File) => {
     if (!file) return;
     setUploadingImage(true);
