@@ -15,10 +15,14 @@ const OrderSchema = new mongoose.Schema(
     name: { type: String },
     phone: { type: String },
     address: { type: String },
-    payment: { type: String, enum: ['COD', 'UPI', 'Card'], default: 'COD' },
+    payment: { type: String, enum: ['COD', 'UPI'], default: 'COD' },
     items: { type: [OrderItemSchema], default: [] },
     total: { type: Number, default: 0 },
-    status: { type: String, enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'cod_pending', 'pending_verification', 'verified', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+    upi: {
+      payerName: { type: String },
+      txnId: { type: String },
+    },
   },
   { timestamps: true },
 );
