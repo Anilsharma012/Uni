@@ -19,12 +19,40 @@ function toClient(doc) {
   return obj;
 }
 
+function absoluteUrl(req, url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  if (url.startsWith('/')) return `${base}${url}`;
+  return `${base}/${url}`;
+}
+
+// Admin-only full settings
 router.get('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const doc = await ensureSettingsDoc();
     return res.json({ ok: true, data: toClient(doc) });
   } catch (error) {
     console.error('Failed to load settings', error);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+// Public payments settings for checkout
+router.get('/payments', async (req, res) => {
+  try {
+    const doc = await ensureSettingsDoc();
+    const p = (doc.payment || {});
+    const out = {
+      upiQrImage: absoluteUrl(req, p.upiQrImage || ''),
+      upiId: p.upiId || '',
+      beneficiaryName: p.beneficiaryName || '',
+      instructions: p.instructions || 'Scan QR and pay. Enter UTR/Txn ID on next step.',
+      updatedAt: doc.updatedAt,
+    };
+    return res.json({ ok: true, data: out });
+  } catch (error) {
+    console.error('Failed to load payment settings', error);
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });

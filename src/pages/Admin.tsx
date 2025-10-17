@@ -692,7 +692,7 @@ const Admin = () => {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
         const full = url && url.startsWith('http') ? url : (url ? url : '');
-        setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+        setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
       } catch (finalRelErr) {

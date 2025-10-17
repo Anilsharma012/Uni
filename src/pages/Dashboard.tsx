@@ -15,6 +15,8 @@ export type Order = {
   _id: string;
   total: number;
   payment?: string;
+  paymentMethod?: string;
+  upi?: { payerName?: string; txnId?: string };
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled" | string;
   createdAt: string;
   items: OrderItem[];
@@ -67,7 +69,7 @@ export default function Dashboard() {
       setLoadingOrders(true);
       let list: Order[] = [];
       try {
-        const res = (await api("/api/orders?mine=1")) as { ok: boolean; json: OrdersResponse } & any;
+        const res = (await api("/api/orders/mine")) as { ok: boolean; json: OrdersResponse } & any;
         if (res.ok && res.json?.ok && Array.isArray(res.json.data)) {
           list = res.json.data as Order[];
         }
@@ -168,6 +170,22 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Recent Orders</h2>
             <div className="flex items-center gap-2">
+              <button
+                className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                onClick={() => {
+                  // simple refresh: re-run the effect by toggling showCount briefly
+                  setLoadingOrders(true);
+                  (async () => {
+                    try {
+                      const res = (await api("/api/orders/mine")) as { ok: boolean; json: OrdersResponse } & any;
+                      if (res.ok && res.json?.ok && Array.isArray(res.json.data)) setOrders(res.json.data as Order[]);
+                    } catch {}
+                    setLoadingOrders(false);
+                  })();
+                }}
+              >
+                Refresh
+              </button>
               <select
                 value={filter}
                 onChange={(e) => {
@@ -267,7 +285,12 @@ export default function Dashboard() {
                         </table>
                       </div>
                       <div className="mt-4 flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">Payment: {o.payment || "-"}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Payment: {o.paymentMethod || o.payment || "-"}
+                          {o.upi?.txnId ? (
+                            <span className="ml-3 text-xs">UTR: {o.upi.txnId}</span>
+                          ) : null}
+                        </div>
                         <Button size="sm" onClick={() => reorder(o)}>Reorder</Button>
                       </div>
                     </div>

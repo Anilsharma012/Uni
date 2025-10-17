@@ -40,6 +40,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
 
   const [upiPayerName, setUpiPayerName] = useState("");
   const [upiTxnId, setUpiTxnId] = useState("");
@@ -55,7 +56,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const response = await fetch("/api/settings", {
+      const response = await fetch("/api/settings/payments", {
         method: "GET",
         headers,
         credentials: "include",
@@ -66,8 +67,14 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         data = await response.json();
       } catch {}
 
-      if (response.ok && data?.data?.payment) {
-        setPaymentSettings(data.data.payment);
+      if (response.ok && data?.data) {
+        const p = data.data as any;
+        setPaymentSettings({
+          upiQrImage: typeof p.upiQrImage === "string" && p.updatedAt ? `${p.upiQrImage}?v=${encodeURIComponent(p.updatedAt)}` : p.upiQrImage || "",
+          upiId: p.upiId || "",
+          beneficiaryName: p.beneficiaryName || "",
+          instructions: p.instructions || "",
+        });
       } else {
         setSettingsError("Failed to load UPI settings");
       }
@@ -130,16 +137,9 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         image: i.image,
       })),
       total,
-      created_at: new Date().toISOString(),
-      status: payment === "COD" ? "cod_pending" : "pending_verification",
-    };
-
-    if (payment === "UPI") {
-      (payload as any).upi = {
-        payerName: upiPayerName,
-        txnId: upiTxnId || undefined,
-      };
-    }
+      status: "pending",
+      upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+    } as any;
 
     const res = await placeOrder(payload);
     setLoading(false);
@@ -154,7 +154,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           _id: newOrderId,
           total,
           paymentMethod: payment,
-          status: payment === "COD" ? "cod_pending" : "pending_verification",
+          status: "pending",
           createdAt: new Date().toISOString(),
           items: items.map((i) => ({
             id: i.id,
@@ -163,7 +163,8 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
             qty: i.qty,
             image: i.image,
           })),
-        };
+          upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+        } as any;
         localStorage.setItem("uni_orders_v1", JSON.stringify([order, ...arr]));
         localStorage.setItem("uni_last_order_id", newOrderId);
       } catch (e) {
@@ -300,7 +301,11 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                         src={paymentSettings.upiQrImage}
                         alt="UPI QR Code"
                         className="w-40 h-40 border border-border rounded p-1 bg-white"
+                        onError={() => setQrError(true)}
                       />
+                      {qrError && (
+                        <div className="text-[11px] text-destructive">QR not available</div>
+                      )}
                     </div>
                   )}
 

@@ -23,7 +23,9 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 // Uploads are admin-only
 router.post('/', requireAuth, requireAdmin, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
-  const url = `/uploads/${req.file.filename}`;
+  const rel = `/uploads/${req.file.filename}`;
+  const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const url = `${base}${rel}`;
   return res.json({ ok: true, url });
 });
 
