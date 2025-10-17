@@ -69,7 +69,7 @@ export default function Dashboard() {
       setLoadingOrders(true);
       let list: Order[] = [];
       try {
-        const res = (await api("/api/orders?mine=1")) as { ok: boolean; json: OrdersResponse } & any;
+        const res = (await api("/api/orders/mine")) as { ok: boolean; json: OrdersResponse } & any;
         if (res.ok && res.json?.ok && Array.isArray(res.json.data)) {
           list = res.json.data as Order[];
         }
@@ -177,7 +177,7 @@ export default function Dashboard() {
                   setLoadingOrders(true);
                   (async () => {
                     try {
-                      const res = (await api("/api/orders?mine=1")) as { ok: boolean; json: OrdersResponse } & any;
+                      const res = (await api("/api/orders/mine")) as { ok: boolean; json: OrdersResponse } & any;
                       if (res.ok && res.json?.ok && Array.isArray(res.json.data)) setOrders(res.json.data as Order[]);
                     } catch {}
                     setLoadingOrders(false);
