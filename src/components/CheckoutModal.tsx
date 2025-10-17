@@ -298,7 +298,18 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-medium">Scan QR Code to Pay</p>
                       <img
-                        src={paymentSettings.upiQrImage}
+                        src={(function(){
+                          const s = String(paymentSettings.upiQrImage || '');
+                          if (!s) return '';
+                          if (s.startsWith('http')) {
+                            try { const u = new URL(s); if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return `/api${u.pathname}`; } catch {}
+                            return s;
+                          }
+                          if (s.startsWith('/api/uploads')) return s;
+                          if (s.startsWith('/uploads')) return `/api${s}`;
+                          if (s.startsWith('uploads')) return `/api/${s}`;
+                          return s;
+                        })()}
                         alt="UPI QR Code"
                         className="w-40 h-40 border border-border rounded p-1 bg-white"
                         onError={() => setQrError(true)}
