@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { CheckoutModal } from "@/components/CheckoutModal";
 
 // Types for orders and items
 type OrderItem = { id: string; title: string; price: number; qty: number; image?: string };
