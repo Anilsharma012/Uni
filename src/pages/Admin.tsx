@@ -942,67 +942,128 @@ const handleProductSubmit = async (e: React.FormEvent) => {
   const renderOverview = () => (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage catalogue, orders, payments, and shipping integrations for UNI10.
-        </p>
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Overview</h1>
+        <p className="text-muted-foreground mt-2">Sales and users at a glance.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {overviewLoading ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <p className="text-3xl font-bold">₹{Number(overviewData?.totals?.revenue || 0).toLocaleString('en-IN')}</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {overviewLoading ? <Skeleton className="h-8 w-16" /> : <p className="text-3xl font-bold">{Number(overviewData?.totals?.orders || 0)}</p>}
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
-              </div>
-            ) : (
-              <p className="text-4xl font-bold">{stats.totalUsers}</p>
-            )}
+            {overviewLoading ? <Skeleton className="h-8 w-16" /> : <p className="text-3xl font-bold">{Number(overviewData?.totals?.users || 0)}</p>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Total Sales</CardTitle>
+            <CardTitle>Last Month vs Previous</CardTitle>
           </CardHeader>
           <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
+            {overviewLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-32" />
               </div>
             ) : (
-              <p className="text-4xl font-bold">{orders.length}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center justify-between"><span>Revenue</span><span className="font-semibold">₹{Number(overviewData?.lastMonth?.revenue || 0).toLocaleString('en-IN')} vs ₹{Number(overviewData?.prevMonth?.revenue || 0).toLocaleString('en-IN')}</span></div>
+                <div className="flex items-center justify-between"><span>Orders</span><span className="font-semibold">{Number(overviewData?.lastMonth?.orders || 0)} vs {Number(overviewData?.prevMonth?.orders || 0)}</span></div>
               </div>
-            ) : (
-              <p className="text-4xl font-bold">{stats.totalProducts}</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>How to use this dashboard</CardTitle>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <CardTitle>Daily Revenue & Orders</CardTitle>
+            {overviewError && <p className="text-xs text-destructive mt-1">{overviewError}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {(['7d','30d','90d'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setOverviewRange(r)}
+                  className={cn('px-3 py-1 text-xs', overviewRange === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {(['line','bar'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChartType(t)}
+                  className={cn('px-3 py-1 text-xs capitalize', chartType === t ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted')}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>Select a section from the sidebar to manage products, orders, or users.</p>
-          <p>Use the Payment and Shiprocket settings to configure your integration keys. Defaults use Razorpay and Shiprocket test credentials so you can start testing immediately.</p>
+        <CardContent>
+          {overviewLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <ChartContainer
+              config={{ revenue: { label: 'Revenue', color: 'hsl(var(--primary))' }, orders: { label: 'Orders', color: 'hsl(var(--muted-foreground))' } }}
+              className="w-full aspect-[16/7]"
+            >
+              {({ width, height }) => (
+                chartType === 'line' ? (
+                  <LineChart width={width} height={height} data={overviewData?.series || []} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickMargin={8} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="var(--color-revenue)" dot={false} />
+                    <Line yAxisId="right" type="monotone" dataKey="orders" stroke="var(--color-orders)" dot={false} />
+                  </LineChart>
+                ) : (
+                  <BarChart width={width} height={height} data={overviewData?.series || []} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickMargin={8} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Bar yAxisId="left" dataKey="revenue" fill="var(--color-revenue)" radius={[4,4,0,0]} />
+                    <Bar yAxisId="right" dataKey="orders" fill="var(--color-orders)" radius={[4,4,0,0]} />
+                  </BarChart>
+                )
+              )}
+            </ChartContainer>
+          )}
         </CardContent>
       </Card>
     </div>
