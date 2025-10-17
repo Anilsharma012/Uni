@@ -104,6 +104,16 @@ export default function Dashboard() {
     }
   }, [location?.state]);
 
+  // Handle checkout query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('checkout') === 'true') {
+      setOpenCheckout(true);
+      // Clean up URL
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search]);
+
   // Compute filtered and paginated orders
   const filtered = useMemo(() => {
     if (filter === "All") return orders;
