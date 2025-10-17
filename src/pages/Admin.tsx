@@ -346,6 +346,25 @@ const Admin = () => {
   const [savingShiprocket, setSavingShiprocket] = useState(false);
   const [uploadingQrCode, setUploadingQrCode] = useState(false);
 
+  // Overview chart state
+  const [overviewRange, setOverviewRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [overviewData, setOverviewData] = useState<{
+    totals: { revenue: number; orders: number; users: number };
+    lastMonth: { revenue: number; orders: number };
+    prevMonth: { revenue: number; orders: number };
+    series: { date: string; revenue: number; orders: number }[];
+  } | null>(null);
+
+  // Order detail drawer state
+  const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetail, setOrderDetail] = useState<any | null>(null);
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
+  const [orderDetailError, setOrderDetailError] = useState<string | null>(null);
+
   const totalSalesFormatted = useMemo(
     () => `₹${stats.totalSales.toLocaleString('en-IN')}`,
     [stats.totalSales],
