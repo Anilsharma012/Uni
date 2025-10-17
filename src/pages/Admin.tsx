@@ -282,7 +282,19 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       ] as unknown as T;
     }
     if (p.includes('/api/settings')) {
-      return createDefaultSettings() as unknown as T;
+      // Return default settings for demo/fallback mode
+      const demoSettings = createDefaultSettings();
+      // If this is a PUT request to save, just acknowledge it succeeded
+      if ((options?.method || 'GET').toUpperCase() === 'PUT') {
+        // Return the settings that were sent, merged with defaults
+        try {
+          const reqBody = options?.body ? JSON.parse(String(options.body)) : {};
+          return { ...demoSettings, ...reqBody } as unknown as T;
+        } catch {
+          return demoSettings as unknown as T;
+        }
+      }
+      return demoSettings as unknown as T;
     }
 
     return {} as T;
