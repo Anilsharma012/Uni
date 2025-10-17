@@ -617,6 +617,19 @@ const Admin = () => {
       }
     };
 
+    const normalizeForUi = (u: string) => {
+      const s = String(u || '');
+      if (!s) return '';
+      if (s.startsWith('http')) {
+        try { const parsed = new URL(s); if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return `/api${parsed.pathname}`; } catch {}
+        return s;
+      }
+      if (s.startsWith('/api/uploads')) return s;
+      if (s.startsWith('/uploads')) return `/api${s}`;
+      if (s.startsWith('uploads')) return `/api/${s}`;
+      return s;
+    };
+
     const tryUpload = async (uploadUrl: string) => {
       const fd = new FormData();
       fd.append('file', file);
@@ -648,7 +661,7 @@ const Admin = () => {
         try {
           const relJson = await tryUpload('/api/uploads');
           const url = relJson?.url || relJson?.data?.url;
-          const full = url && url.startsWith('http') ? url : (url ? url : '');
+          const full = normalizeForUi(url);
           setPaymentForm((p) => ({ ...p, upiQrImage: full }));
           toast.success('QR Code uploaded');
           return;
@@ -662,7 +675,7 @@ const Admin = () => {
           const json = await tryUpload(primaryUrl);
           const url = json?.url || json?.data?.url;
           if (url) {
-            const full = url.startsWith('http') ? url : `${baseNormalized}${url}`;
+            const full = normalizeForUi(url);
             setPaymentForm((p) => ({ ...p, upiQrImage: full }));
             toast.success('QR Code uploaded');
             return;
@@ -676,7 +689,7 @@ const Admin = () => {
               const json2 = await tryUpload(httpsUrl);
               const url2 = json2?.url || json2?.data?.url;
               if (url2) {
-                const full = url2.startsWith('http') ? url2 : `${httpsUrl}${url2}`;
+                const full = normalizeForUi(url2);
                 setPaymentForm((p) => ({ ...p, upiQrImage: full }));
                 toast.success('QR Code uploaded (via https fallback)');
                 return;
@@ -691,7 +704,7 @@ const Admin = () => {
       try {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
-        const full = url && url.startsWith('http') ? url : (url ? url : '');
+        const full = normalizeForUi(url);
         setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
