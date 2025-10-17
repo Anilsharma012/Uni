@@ -34,6 +34,9 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [pincode, setPincode] = useState("");
   const [payment, setPayment] = useState<"COD" | "UPI">("COD");
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
@@ -114,6 +117,14 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       toast({ title: "Please fill name, phone and address", variant: "destructive" });
       return;
     }
+    if (!city || !stateName || !pincode) {
+      toast({ title: "Please add city, state and pincode", variant: "destructive" });
+      return;
+    }
+    if (!/^\d{6}$/.test(pincode)) {
+      toast({ title: "Enter a valid 6-digit pincode", variant: "destructive" });
+      return;
+    }
     if (payment === "UPI" && !upiPayerName) {
       toast({ title: "Please enter payer name for UPI payment", variant: "destructive" });
       return;
@@ -125,11 +136,15 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       name,
       phone,
       address,
+      city,
+      state: stateName,
+      pincode,
       paymentMethod: payment,
       items: items.map((i) => ({ id: i.id, title: i.title, price: i.price, qty: i.qty, meta: i.meta, image: i.image })),
       total,
       status: "pending",
       upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+      customer: { name, phone, address, city, state: stateName, pincode },
     };
 
     const res = await placeOrder(payload);
@@ -143,6 +158,12 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         const arr = raw ? (JSON.parse(raw) as any[]) : [];
         const order = {
           _id: newOrderId,
+          name,
+          phone,
+          address,
+          city,
+          state: stateName,
+          pincode,
           total,
           paymentMethod: payment,
           status: "pending",
@@ -195,7 +216,22 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
 
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="address">Address</label>
-            <textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} className={fieldBase + " min-h-[96px]"} rows={3} autoComplete="street-address" placeholder="House no., Street, City, Pincode" />
+            <textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} className={fieldBase + " min-h-[96px]"} rows={3} autoComplete="street-address" placeholder="House no., Street, Area" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="city">City</label>
+              <input id="city" value={city} onChange={(e) => setCity(e.target.value)} className={fieldBase} autoComplete="address-level2" placeholder="City" type="text" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="state">State</label>
+              <input id="state" value={stateName} onChange={(e) => setStateName(e.target.value)} className={fieldBase} autoComplete="address-level1" placeholder="State" type="text" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="pincode">Pincode</label>
+              <input id="pincode" value={pincode} onChange={(e) => setPincode(e.target.value.replace(/[^\d]/g, ''))} className={fieldBase} autoComplete="postal-code" placeholder="110001" inputMode="numeric" maxLength={6} />
+            </div>
           </div>
 
           <div>
