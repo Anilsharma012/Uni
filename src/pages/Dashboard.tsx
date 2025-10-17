@@ -27,7 +27,7 @@ const LS_ORDERS = "uni_orders_v1";
 const LS_CART = "uni_cart_v1";
 const LS_LAST = "uni_last_order_id";
 
-const statuses = ["All", "Pending", "Paid", "Shipped", "Delivered", "Cancelled"] as const;
+const statuses = ["All", "Pending", "Cod Pending", "Pending Verification", "Verified", "Shipped", "Delivered", "Cancelled"] as const;
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
