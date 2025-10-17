@@ -13,6 +13,7 @@ const wishlistRoutes = require('./routes/wishlist');
 const reviewsRoutes = require('./routes/reviews');
 const settingsRoutes = require('./routes/settings');
 const uploadsRoutes = require('./routes/uploads');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,6 +70,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin', adminRoutes);
 
 async function start() {
   const uri = process.env.MONGODB_URI;
