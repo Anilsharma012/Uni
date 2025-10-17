@@ -105,18 +105,18 @@ export const Navbar = ({ cartItemCount = 0 }: NavbarProps) => {
                 Products
               </Link>
               <Link
-                to="/new"
+                to="/shop/new-arrivals"
                 className="text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 New Arrivals
               </Link>
               <Link
-                to="/collections"
+                to="/wishlist"
                 className="text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Collections
+                Wishlist
               </Link>
             </div>
           </div>
