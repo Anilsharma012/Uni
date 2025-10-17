@@ -92,7 +92,7 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     upiQrImage: '',
     upiId: '',
     beneficiaryName: '',
- flare-verse
+ 
     instructions: 'Scan the QR code and send payment. Share the transaction ID in the next step.',
 
     instructions: 'Scan QR and pay. Enter UTR/Txn ID on next step.',
@@ -795,7 +795,7 @@ const Admin = () => {
       try {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
- flare-verse
+ 
         const full = url && url.startsWith('http') ? url : (url ? url : '');
 
         const full = normalizeForUi(url);
@@ -1476,7 +1476,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
 
       <Card>
         <CardHeader>
-flare-verse
+
           <CardTitle>UPI Payment</CardTitle>
           <CardDescription>Set up UPI and Cash on Delivery payment options for customers.</CardDescription>
 
@@ -1490,7 +1490,7 @@ flare-verse
               <Label htmlFor="upiId">UPI ID</Label>
               <Input
                 id="upiId"
- flare-verse
+ 
                 placeholder="e.g., name@upi"
 
                 placeholder="e.g., yourname@upi"
@@ -1506,7 +1506,7 @@ flare-verse
               <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
               <Input
                 id="beneficiaryName"
- flare-verse
+ 
                 placeholder="e.g., UNI10 Store"
 
                 placeholder="e.g., Your Business Name"
@@ -1522,7 +1522,7 @@ flare-verse
               <Label htmlFor="instructions">Payment Instructions</Label>
               <Textarea
                 id="instructions"
- flare-verse
+ 
                 placeholder="e.g., Scan the QR code and send payment. Share the transaction ID in the next step."
 
                 placeholder="e.g., Scan QR and pay. Enter UTR/Txn ID on next step."

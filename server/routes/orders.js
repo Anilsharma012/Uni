@@ -1,85 +1,57 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
-const Product = require('../models/Product');
 const { authOptional, requireAuth, requireAdmin } = require('../middleware/auth');
+
+const ALLOWED_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
 
 // Create order
 router.post('/', authOptional, async (req, res) => {
   try {
-flare-verse
-    const { customer, items, payment, paymentMethod, name, phone, address, total, upi } = req.body || {};
+    const body = req.body || {};
 
-    const { customer, items, paymentMethod: pm, payment, name, phone, address, total, upi, status } = req.body || {};
- main
-    const orderItems = items || [];
-    if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) return res.status(400).json({ ok: false, message: 'No items' });
+    const name = body.name || body.customer?.name || '';
+    const phone = body.phone || body.customer?.phone || '';
+    const address = body.address || body.customer?.address || '';
+    const items = Array.isArray(body.items) ? body.items : [];
+    if (!items.length) return res.status(400).json({ ok: false, message: 'No items' });
 
-    // compute total server-side if missing
-    let computed = 0;
-    for (const it of orderItems) {
-      const price = Number(it.price || 0);
-      const qty = Number(it.qty || 0);
-      computed += price * qty;
-    }
+    // compute total server-side if not supplied or invalid
+    const computed = items.reduce((sum, it) => sum + Number(it.price || 0) * Number(it.qty || 0), 0);
+    const total = typeof body.total === 'number' && body.total > 0 ? body.total : computed;
 
-    const finalTotal = typeof total === 'number' && total > 0 ? total : computed;
-    const paymentType = payment || paymentMethod || 'COD';
+    const paymentMethod = (body.paymentMethod || body.payment || 'COD').toString();
 
-flare-verse
     let status = 'pending';
-    if (paymentType === 'COD') {
-      status = 'cod_pending';
-    } else if (paymentType === 'UPI') {
-      status = 'pending_verification';
+    if (typeof body.status === 'string' && ALLOWED_STATUSES.includes(body.status)) {
+      status = body.status;
     }
 
-    const orderData = {
-
-    // support both paymentMethod and legacy 'payment'
-    const paymentMethod = (pm || payment || 'COD').toString();
+    const upi = (paymentMethod === 'UPI' && body.upi && typeof body.upi === 'object')
+      ? { payerName: body.upi.payerName || '', txnId: body.upi.txnId || '' }
+      : undefined;
 
     const doc = new Order({
- main
       userId: req.user ? req.user._id : undefined,
-      name: name || customer?.name,
-      phone: phone || customer?.phone,
-      address: address || customer?.address,
- flare-verse
-      payment: paymentType,
-      items: orderItems,
-      total: finalTotal,
-      status,
-    };
-
-    if (upi && typeof upi === 'object') {
-      orderData.upi = {
-        payerName: upi.payerName || '',
-        txnId: upi.txnId || '',
-      };
-    }
-
-    const o = new Order(orderData);
-    await o.save();
-    return res.json({ ok: true, data: o });
-
+      name,
+      phone,
+      address,
       paymentMethod,
-      items: orderItems,
-      total: finalTotal,
-      status: (status && typeof status === 'string') ? status : 'pending',
-      upi: (paymentMethod === 'UPI' && upi && typeof upi === 'object') ? { payerName: upi.payerName, txnId: upi.txnId } : undefined,
+      items,
+      total,
+      status,
+      upi,
     });
 
     await doc.save();
     return res.json({ ok: true, data: doc });
- main
   } catch (e) {
     console.error(e);
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
 
-// List orders for current user (mine=1)
+// List orders for current user (mine=1) or admin all
 router.get('/', authOptional, async (req, res) => {
   try {
     const { mine } = req.query;
@@ -111,13 +83,12 @@ router.get('/mine', requireAuth, async (req, res) => {
   }
 });
 
-// Get one order
+// Get one order (owner or admin)
 router.get('/:id', authOptional, async (req, res) => {
   try {
     const { id } = req.params;
     const doc = await Order.findById(id).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
-    // owner or admin
     if (req.user && (String(req.user._id) === String(doc.userId) || req.user.role === 'admin')) {
       return res.json({ ok: true, data: doc });
     }
@@ -134,8 +105,7 @@ router.put('/:id/status', requireAuth, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body || {};
     if (!status) return res.status(400).json({ ok: false, message: 'Missing status' });
-    const allowed = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
-    if (!allowed.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
+    if (!ALLOWED_STATUSES.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
     const doc = await Order.findByIdAndUpdate(id, { status }, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
     return res.json({ ok: true, data: doc });
@@ -154,8 +124,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     // Map common aliases from UI
     const map = { processing: 'paid', completed: 'delivered' };
     status = map[status] || status;
-    const allowed = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
-    if (!allowed.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
+    if (!ALLOWED_STATUSES.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
     const doc = await Order.findByIdAndUpdate(id, { status }, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
     return res.json({ ok: true, data: doc });

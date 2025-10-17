@@ -83,7 +83,7 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
 
     if (body.payment && typeof body.payment === 'object') {
       const payment = body.payment;
- flare-verse
+ 
       if (typeof payment.upiQrImage === 'string') {
         set['payment.upiQrImage'] = payment.upiQrImage;
       }

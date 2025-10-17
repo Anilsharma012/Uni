@@ -212,7 +212,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
- flare-verse
+ 
             <div className="space-y-3">
               {outOfStock ? (
                 <TooltipProvider>
