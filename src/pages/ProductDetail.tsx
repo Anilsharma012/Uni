@@ -229,7 +229,10 @@ const ProductDetail = () => {
                   </Tooltip>
                 </TooltipProvider>
               ) : (
-               
+                <Button size="lg" className="w-full" onClick={handleAddToCart}>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </Button>
               )}
               {!outOfStock && (
                 <Button size="lg" className="w-full" onClick={handleBuyNow}>
@@ -238,23 +241,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {outOfStock ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="w-full">
-                      <Button size="lg" className="w-full" disabled>
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                        Add to Cart
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Out of stock</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-             
-            )}
 
           </div>
         </div>
