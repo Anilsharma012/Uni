@@ -12,10 +12,18 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Copy, Check } from "lucide-react";
 
 type Props = {
   open: boolean;
   setOpen: (v: boolean) => void;
+};
+
+type UPISettings = {
+  upiQrImage: string;
+  upiId: string;
+  beneficiaryName: string;
+  instructions: string;
 };
 
 export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
@@ -27,20 +35,23 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [payment, setPayment] = useState<"COD" | "UPI" | "Card">("COD");
-  const [upiQrCode, setUpiQrCode] = useState<string | null>(null);
-  const [loadingQr, setLoadingQr] = useState(false);
+  const [payment, setPayment] = useState<"COD" | "UPI">("COD");
+  const [upiSettings, setUpiSettings] = useState<UPISettings | null>(null);
+  const [loadingUpi, setLoadingUpi] = useState(false);
+  const [payerName, setPayerName] = useState("");
+  const [txnId, setTxnId] = useState("");
+  const [copiedUpi, setCopiedUpi] = useState(false);
 
-  // Fetch UPI QR code when modal opens
+  // Fetch UPI settings when payment method changes to UPI
   useEffect(() => {
-    if (open && payment === "UPI" && !upiQrCode && !loadingQr) {
-      fetchUpiQrCode();
+    if (payment === "UPI" && !upiSettings && !loadingUpi) {
+      fetchUpiSettings();
     }
-  }, [open, payment]);
+  }, [payment]);
 
-  const fetchUpiQrCode = async () => {
+  const fetchUpiSettings = async () => {
     try {
-      setLoadingQr(true);
+      setLoadingUpi(true);
       const token = localStorage.getItem('token');
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -58,13 +69,34 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         data = await response.json();
       } catch {}
 
-      if (response.ok && data?.data?.payment?.upiQrCode) {
-        setUpiQrCode(data.data.payment.upiQrCode);
+      if (response.ok && data?.data?.payment) {
+        const payment = data.data.payment;
+        setUpiSettings({
+          upiQrImage: payment.upiQrImage || '',
+          upiId: payment.upiId || '',
+          beneficiaryName: payment.beneficiaryName || '',
+          instructions: payment.instructions || '',
+        });
+      } else {
+        toast({ title: 'Failed to load UPI settings', variant: 'destructive' });
       }
     } catch (error) {
-      console.error('Failed to fetch UPI QR code:', error);
+      console.error('Failed to fetch UPI settings:', error);
+      toast({ title: 'Failed to load UPI settings', variant: 'destructive' });
     } finally {
-      setLoadingQr(false);
+      setLoadingUpi(false);
+    }
+  };
+
+  const copyUpiId = async () => {
+    if (!upiSettings?.upiId) return;
+    try {
+      await navigator.clipboard.writeText(upiSettings.upiId);
+      setCopiedUpi(true);
+      toast({ title: 'UPI ID copied to clipboard' });
+      setTimeout(() => setCopiedUpi(false), 2000);
+    } catch (error) {
+      toast({ title: 'Failed to copy UPI ID', variant: 'destructive' });
     }
   };
 
