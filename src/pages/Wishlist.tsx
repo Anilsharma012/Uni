@@ -134,9 +134,7 @@ const Wishlist = () => {
                       {product.category || 'Uncategorized'}
                     </p>
                     <h3 className="font-semibold mb-2">{title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Stock: {Number(product.stock || 0)}
-                    </p>
+                    
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-bold">
                         ₹{Number(product.price || 0).toLocaleString('en-IN')}
