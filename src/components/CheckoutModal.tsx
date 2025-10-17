@@ -154,7 +154,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           _id: newOrderId,
           total,
           paymentMethod: payment,
-          status: payment === "COD" ? "cod_pending" : "pending_verification",
+          status: "pending",
           createdAt: new Date().toISOString(),
           items: items.map((i) => ({
             id: i.id,
@@ -163,7 +163,8 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
             qty: i.qty,
             image: i.image,
           })),
-        };
+          upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+        } as any;
         localStorage.setItem("uni_orders_v1", JSON.stringify([order, ...arr]));
         localStorage.setItem("uni_last_order_id", newOrderId);
       } catch (e) {
