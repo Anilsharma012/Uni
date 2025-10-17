@@ -111,6 +111,30 @@ const ProductDetail = () => {
     toast({ title: 'Added to cart!', description: `${title} has been added to your cart.` });
   };
 
+  const handleBuyNow = () => {
+    if (!product) return;
+    if (outOfStock) {
+      toast({ title: 'Out of stock', variant: 'destructive' });
+      return;
+    }
+    // If product defines sizes, require selection
+    if (Array.isArray(product?.sizes) && product.sizes.length > 0 && !selectedSize) {
+      toast({ title: 'Select a size', description: 'Please choose a size before proceeding to checkout.', variant: 'destructive' });
+      return;
+    }
+
+    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img, meta: {} as any };
+    if (selectedSize) item.meta.size = selectedSize;
+
+    if (!user) {
+      try { localStorage.setItem('uni_add_intent', JSON.stringify({ item, qty: 1 })); } catch {}
+      navigate('/auth');
+      return;
+    }
+    addToCart(item, 1);
+    navigate('/dashboard?checkout=true');
+  };
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading…</div>;
   if (!product) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -188,6 +212,35 @@ const ProductDetail = () => {
               </div>
             </div>
 
+ flare-verse
+            <div className="space-y-3">
+              {outOfStock ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button size="lg" className="w-full" disabled>
+                          <ShoppingCart className="mr-2 h-5 w-5" />
+                          Add to Cart
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>Out of stock</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button size="lg" className="w-full" onClick={handleAddToCart} variant="outline">
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </Button>
+              )}
+              {!outOfStock && (
+                <Button size="lg" className="w-full" onClick={handleBuyNow}>
+                  Buy Now
+                </Button>
+              )}
+            </div>
+
             {outOfStock ? (
               <TooltipProvider>
                 <Tooltip>
@@ -222,6 +275,7 @@ const ProductDetail = () => {
                 </Button>
               </div>
             )}
+ main
           </div>
         </div>
       </main>

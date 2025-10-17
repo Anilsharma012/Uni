@@ -83,10 +83,25 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
 
     if (body.payment && typeof body.payment === 'object') {
       const payment = body.payment;
+ flare-verse
+      if (typeof payment.upiQrImage === 'string') {
+        set['payment.upiQrImage'] = payment.upiQrImage;
+      }
+      if (typeof payment.upiId === 'string') {
+        set['payment.upiId'] = payment.upiId.trim();
+      }
+      if (typeof payment.beneficiaryName === 'string') {
+        set['payment.beneficiaryName'] = payment.beneficiaryName.trim();
+      }
+      if (typeof payment.instructions === 'string') {
+        set['payment.instructions'] = payment.instructions.trim();
+      }
+
       if (typeof payment.upiQrImage === 'string') set['payment.upiQrImage'] = payment.upiQrImage.trim();
       if (typeof payment.upiId === 'string') set['payment.upiId'] = payment.upiId.trim();
       if (typeof payment.beneficiaryName === 'string') set['payment.beneficiaryName'] = payment.beneficiaryName.trim();
       if (typeof payment.instructions === 'string') set['payment.instructions'] = payment.instructions.trim();
+ main
     }
 
     if (body.shipping && typeof body.shipping === 'object') {

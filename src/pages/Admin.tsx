@@ -92,7 +92,11 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     upiQrImage: '',
     upiId: '',
     beneficiaryName: '',
+ flare-verse
+    instructions: 'Scan the QR code and send payment. Share the transaction ID in the next step.',
+
     instructions: 'Scan QR and pay. Enter UTR/Txn ID on next step.',
+ main
   };
 }
 
@@ -255,6 +259,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     }
 
     console.warn('Admin apiFetch network issue — using demo fallback for:', path, (err as any)?.message || err);
+    console.warn('This typically means the backend API is unreachable. Current location:', location.origin, 'API_BASE:', API_BASE);
 
     const p = path.toLowerCase();
     if (p.includes('/api/auth/users')) {
@@ -286,7 +291,19 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       ] as unknown as T;
     }
     if (p.includes('/api/settings')) {
-      return {} as T;
+      // Return default settings for demo/fallback mode
+      const demoSettings = createDefaultSettings();
+      // If this is a PUT request to save, just acknowledge it succeeded
+      if ((options?.method || 'GET').toUpperCase() === 'PUT') {
+        // Return the settings that were sent, merged with defaults
+        try {
+          const reqBody = options?.body ? JSON.parse(String(options.body)) : {};
+          return { ...demoSettings, ...reqBody } as unknown as T;
+        } catch {
+          return demoSettings as unknown as T;
+        }
+      }
+      return demoSettings as unknown as T;
     }
 
     return {} as T;
@@ -778,7 +795,11 @@ const Admin = () => {
       try {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
+ flare-verse
+        const full = url && url.startsWith('http') ? url : (url ? url : '');
+
         const full = normalizeForUi(url);
+ main
         setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
@@ -900,7 +921,9 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       setSettings(normalizeSettings(updated));
       toast.success('Payment settings updated');
     } catch (error: any) {
-      toast.error(`Failed to update payment settings: ${error?.message ?? 'Unknown error'}`);
+      const errorMsg = error?.message ?? 'Unknown error';
+      console.error('Payment settings save error:', error);
+      toast.error(`Failed to update payment settings: ${errorMsg}`);
     } finally {
       setSavingPayment(false);
     }
@@ -1447,14 +1470,19 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       <div>
         <h2 className="text-2xl font-bold">Payment Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Configure Razorpay keys and manual payment instructions. Defaults use Razorpay test credentials so you can integrate immediately.
+          Configure UPI payment details for your customers. Provide your UPI QR code, UPI ID, and payment instructions.
         </p>
       </div>
 
       <Card>
         <CardHeader>
+flare-verse
+          <CardTitle>UPI Payment</CardTitle>
+          <CardDescription>Set up UPI and Cash on Delivery payment options for customers.</CardDescription>
+
           <CardTitle>UPI Payment Settings</CardTitle>
           <CardDescription>Configure UPI QR code and details for customers to scan and pay.</CardDescription>
+ main
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePaymentSubmit} className="space-y-5">
@@ -1462,34 +1490,49 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               <Label htmlFor="upiId">UPI ID</Label>
               <Input
                 id="upiId"
+ flare-verse
+                placeholder="e.g., name@upi"
+
                 placeholder="e.g., yourname@upi"
+ main
                 value={paymentForm.upiId}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, upiId: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
               />
+              <p className="text-sm text-muted-foreground mt-1">Your UPI address (e.g., merchant@upi or 9876543210@paytm)</p>
             </div>
 
             <div>
               <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
               <Input
                 id="beneficiaryName"
+ flare-verse
+                placeholder="e.g., UNI10 Store"
+
                 placeholder="e.g., Your Business Name"
+ main
                 value={paymentForm.beneficiaryName}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, beneficiaryName: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
               />
+              <p className="text-sm text-muted-foreground mt-1">Name that appears to customers during payment</p>
             </div>
 
             <div>
               <Label htmlFor="instructions">Payment Instructions</Label>
               <Textarea
                 id="instructions"
+ flare-verse
+                placeholder="e.g., Scan the QR code and send payment. Share the transaction ID in the next step."
+
                 placeholder="e.g., Scan QR and pay. Enter UTR/Txn ID on next step."
+ main
                 value={paymentForm.instructions}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, instructions: e.target.value }))}
                 rows={3}
                 disabled={settingsLoading || savingPayment}
               />
+              <p className="text-sm text-muted-foreground mt-1">Instructions shown to customers at checkout</p>
             </div>
 
             <div className="border-t border-border pt-5">

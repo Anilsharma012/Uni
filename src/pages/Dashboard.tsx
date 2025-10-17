@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { CheckoutModal } from "@/components/CheckoutModal";
 
 // Types for orders and items
 type OrderItem = { id: string; title: string; price: number; qty: number; image?: string };
@@ -28,7 +29,7 @@ const LS_ORDERS = "uni_orders_v1";
 const LS_CART = "uni_cart_v1";
 const LS_LAST = "uni_last_order_id";
 
-const statuses = ["All", "Pending", "Paid", "Shipped", "Delivered", "Cancelled"] as const;
+const statuses = ["All", "Pending", "Cod Pending", "Pending Verification", "Verified", "Shipped", "Delivered", "Cancelled"] as const;
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showCount, setShowCount] = useState(10);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [openCheckout, setOpenCheckout] = useState(false);
 
   // Protect route
   useEffect(() => {
@@ -104,10 +106,20 @@ export default function Dashboard() {
     }
   }, [location?.state]);
 
+  // Handle checkout query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('checkout') === 'true') {
+      setOpenCheckout(true);
+      // Clean up URL
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search]);
+
   // Compute filtered and paginated orders
   const filtered = useMemo(() => {
     if (filter === "All") return orders;
-    const f = filter.toLowerCase();
+    const f = filter.toLowerCase().replace(/\s+/g, '_');
     return orders.filter((o) => (o.status || "").toLowerCase() === f);
   }, [orders, filter]);
   const visible = filtered.slice(0, showCount);
@@ -136,6 +148,9 @@ export default function Dashboard() {
     const base = "px-2 py-0.5 rounded text-xs font-medium capitalize";
     const map: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      cod_pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      pending_verification: "bg-orange-100 text-orange-800 border border-orange-200",
+      verified: "bg-green-100 text-green-800 border border-green-200",
       paid: "bg-green-100 text-green-800 border border-green-200",
       shipped: "bg-blue-100 text-blue-800 border border-blue-200",
       delivered: "bg-emerald-100 text-emerald-800 border border-emerald-200",
@@ -342,6 +357,7 @@ export default function Dashboard() {
         </section>
       </main>
       <Footer />
+      <CheckoutModal open={openCheckout} setOpen={setOpenCheckout} />
     </div>
   );
 }
