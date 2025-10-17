@@ -50,13 +50,10 @@ const ENDPOINTS = {
 type Section = (typeof NAV_ITEMS)[number]['id'];
 
 type PaymentSettingsForm = {
-  razorpayEnabled: boolean;
-  razorpayKeyId: string;
-  razorpayKeySecret: string;
-  manualPaymentEnabled: boolean;
-  manualPaymentInstructions: string;
-  manualPaymentContact: string;
-  upiQrCode: string;
+  upiQrImage: string;
+  upiId: string;
+  beneficiaryName: string;
+  instructions: string;
 };
 
 type ShiprocketSettingsForm = {
