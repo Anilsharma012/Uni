@@ -13,8 +13,15 @@ router.post('/', authOptional, async (req, res) => {
     const name = body.name || body.customer?.name || '';
     const phone = body.phone || body.customer?.phone || '';
     const address = body.address || body.customer?.address || '';
+    const city = body.city || body.customer?.city || '';
+    const state = body.state || body.customer?.state || '';
+    const pincode = body.pincode || body.customer?.pincode || '';
     const items = Array.isArray(body.items) ? body.items : [];
     if (!items.length) return res.status(400).json({ ok: false, message: 'No items' });
+
+    if (!city || !state || !pincode) return res.status(400).json({ ok: false, message: 'City, state and pincode are required' });
+    const pinOk = /^\d{4,8}$/.test(String(pincode));
+    if (!pinOk) return res.status(400).json({ ok: false, message: 'Invalid pincode' });
 
     // compute total server-side if not supplied or invalid
     const computed = items.reduce((sum, it) => sum + Number(it.price || 0) * Number(it.qty || 0), 0);
@@ -37,6 +44,10 @@ router.post('/', authOptional, async (req, res) => {
       phone,
       address,
       paymentMethod,
+      address,
+      city,
+      state,
+      pincode,
       items,
       total,
       status,
