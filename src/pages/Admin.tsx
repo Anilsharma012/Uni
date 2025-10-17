@@ -120,34 +120,22 @@ function normalizeSettings(raw: any): IntegrationSettings {
     id: typeof raw?.id === 'string' ? raw.id : typeof raw?._id === 'string' ? raw._id : undefined,
     domain: typeof raw?.domain === 'string' && raw.domain.trim() ? raw.domain.trim() : defaults.domain,
     payment: {
-      razorpayEnabled:
-        typeof raw?.payment?.razorpayEnabled === 'boolean'
-          ? raw.payment.razorpayEnabled
-          : defaults.payment.razorpayEnabled,
-      razorpayKeyId:
-        typeof raw?.payment?.razorpayKeyId === 'string' && raw.payment.razorpayKeyId.trim()
-          ? raw.payment.razorpayKeyId.trim()
-          : defaults.payment.razorpayKeyId,
-      razorpayKeySecret:
-        typeof raw?.payment?.razorpayKeySecret === 'string' && raw.payment.razorpayKeySecret.trim()
-          ? raw.payment.razorpayKeySecret.trim()
-          : defaults.payment.razorpayKeySecret,
-      manualPaymentEnabled:
-        typeof raw?.payment?.manualPaymentEnabled === 'boolean'
-          ? raw.payment.manualPaymentEnabled
-          : defaults.payment.manualPaymentEnabled,
-      manualPaymentInstructions:
-        typeof raw?.payment?.manualPaymentInstructions === 'string' && raw.payment.manualPaymentInstructions.trim()
-          ? raw.payment.manualPaymentInstructions.trim()
-          : defaults.payment.manualPaymentInstructions,
-      manualPaymentContact:
-        typeof raw?.payment?.manualPaymentContact === 'string' && raw.payment.manualPaymentContact.trim()
-          ? raw.payment.manualPaymentContact.trim()
-          : defaults.payment.manualPaymentContact,
-      upiQrCode:
-        typeof raw?.payment?.upiQrCode === 'string'
-          ? raw.payment.upiQrCode
-          : defaults.payment.upiQrCode,
+      upiQrImage:
+        typeof raw?.payment?.upiQrImage === 'string'
+          ? raw.payment.upiQrImage
+          : defaults.payment.upiQrImage,
+      upiId:
+        typeof raw?.payment?.upiId === 'string' && raw.payment.upiId.trim()
+          ? raw.payment.upiId.trim()
+          : defaults.payment.upiId,
+      beneficiaryName:
+        typeof raw?.payment?.beneficiaryName === 'string' && raw.payment.beneficiaryName.trim()
+          ? raw.payment.beneficiaryName.trim()
+          : defaults.payment.beneficiaryName,
+      instructions:
+        typeof raw?.payment?.instructions === 'string' && raw.payment.instructions.trim()
+          ? raw.payment.instructions.trim()
+          : defaults.payment.instructions,
     },
     shipping: {
       shiprocket: {
