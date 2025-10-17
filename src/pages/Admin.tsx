@@ -281,7 +281,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       ] as unknown as T;
     }
     if (p.includes('/api/settings')) {
-      return {} as T;
+      return createDefaultSettings() as unknown as T;
     }
 
     return {} as T;
