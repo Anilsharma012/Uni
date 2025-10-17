@@ -1695,6 +1695,78 @@ const handleProductSubmit = async (e: React.FormEvent) => {
           </section>
         </div>
       </main>
+
+      {/* Order Detail Drawer */}
+      <Drawer open={orderDrawerOpen} onOpenChange={(o) => { setOrderDrawerOpen(o); if (!o) { setOrderDetail(null); setOrderDetailError(null); } }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Order #{selectedOrderId ? selectedOrderId.slice(0, 8) : ''}</DrawerTitle>
+            {orderDetail?.createdAt && (
+              <DrawerDescription>
+                {new Date(orderDetail.createdAt).toLocaleString()}
+              </DrawerDescription>
+            )}
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-4">
+            {orderDetailLoading && (
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            )}
+            {orderDetailError && (
+              <p className="text-xs text-destructive">{orderDetailError}</p>
+            )}
+            {orderDetail && !orderDetailLoading && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="capitalize">{orderDetail.status}</Badge>
+                  <Badge variant="secondary" className="capitalize">{orderDetail.paymentMethod}</Badge>
+                  <div className="ml-auto font-semibold">₹{Number(orderDetail.totals?.total || 0).toLocaleString('en-IN')}</div>
+                </div>
+
+                <div className="border rounded-md p-3">
+                  <h4 className="font-semibold mb-2">Shipping</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Name:</span> {orderDetail.shipping?.name || '-'}</div>
+                    <div><span className="text-muted-foreground">Phone:</span> {orderDetail.shipping?.phone || '-'}</div>
+                    <div className="md:col-span-2"><span className="text-muted-foreground">Address 1:</span> {orderDetail.shipping?.address1 || '-'}</div>
+                    {orderDetail.shipping?.address2 && (
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Address 2:</span> {orderDetail.shipping?.address2}</div>
+                    )}
+                    <div><span className="text-muted-foreground">City:</span> {orderDetail.shipping?.city || '-'}</div>
+                    <div><span className="text-muted-foreground">State:</span> {orderDetail.shipping?.state || '-'}</div>
+                    <div><span className="text-muted-foreground">Pincode:</span> {orderDetail.shipping?.pincode || '-'}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Items</h4>
+                  <div className="space-y-2">
+                    {(orderDetail.items || []).map((it: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3 border rounded-md p-2">
+                        <img
+                          src={(it.image && String(it.image).length > 3) ? it.image : '/placeholder.svg'}
+                          alt={it.title || 'Product'}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{it.title}</div>
+                          <div className="text-xs text-muted-foreground">{it.variant?.size ? `Size: ${it.variant.size}` : ''}</div>
+                        </div>
+                        <div className="text-sm tabular-nums">{it.qty} × ₹{Number(it.price || 0).toLocaleString('en-IN')}</div>
+                        <div className="w-20 text-right font-semibold">₹{(Number(it.qty || 0) * Number(it.price || 0)).toLocaleString('en-IN')}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       <Footer />
     </div>
   );
