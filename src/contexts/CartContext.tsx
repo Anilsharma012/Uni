@@ -76,9 +76,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { api } = await import('@/lib/api');
       const orderPayload = {
-        name: payload.customer?.name,
-        phone: payload.customer?.phone,
-        address: payload.customer?.address,
+        name: payload.name || payload.customer?.name,
+        phone: payload.phone || payload.customer?.phone,
+        address: payload.address || payload.customer?.address,
+        city: payload.city || payload.customer?.city,
+        state: payload.state || payload.customer?.state,
+        pincode: payload.pincode || payload.customer?.pincode,
         paymentMethod: payload.paymentMethod || 'COD',
         items: payload.items,
         total: payload.total,
