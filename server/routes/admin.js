@@ -101,9 +101,9 @@ router.get('/orders/:id', requireAuth, requireAdmin, async (req, res) => {
         phone: doc.phone || '',
         address1: address,
         address2: '',
-        city: '',
-        state: '',
-        pincode: '',
+        city: doc.city || '',
+        state: doc.state || '',
+        pincode: doc.pincode || '',
       },
       items: Array.isArray(doc.items)
         ? doc.items.map((it) => ({
