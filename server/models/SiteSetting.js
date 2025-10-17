@@ -5,11 +5,7 @@ const PaymentSettingsSchema = new mongoose.Schema(
     upiQrImage: { type: String, default: '' },
     upiId: { type: String, default: '' },
     beneficiaryName: { type: String, default: '' },
- flare-verse
-    instructions: { type: String, default: '' },
-
     instructions: { type: String, default: 'Scan QR and pay. Enter UTR/Txn ID on next step.' },
- main
   },
   { _id: false },
 );

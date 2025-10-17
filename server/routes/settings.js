@@ -23,7 +23,6 @@ function publicAssetUrl(req, value) {
   const raw = typeof value === 'string' ? value : '';
   if (!raw) return '';
 
-  // If an absolute URL is provided, but it's pointing to localhost, convert to same-origin '/api/uploads/...'
   if (/^https?:\/\//i.test(raw)) {
     try {
       const u = new URL(raw);
@@ -34,7 +33,6 @@ function publicAssetUrl(req, value) {
     return raw;
   }
 
-  // For stored relative paths, normalize to '/api/uploads/...'
   if (raw.startsWith('/uploads')) return `/api${raw}`;
   if (raw.startsWith('uploads')) return `/api/${raw}`;
 
@@ -83,25 +81,10 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
 
     if (body.payment && typeof body.payment === 'object') {
       const payment = body.payment;
- flare-verse
-      if (typeof payment.upiQrImage === 'string') {
-        set['payment.upiQrImage'] = payment.upiQrImage;
-      }
-      if (typeof payment.upiId === 'string') {
-        set['payment.upiId'] = payment.upiId.trim();
-      }
-      if (typeof payment.beneficiaryName === 'string') {
-        set['payment.beneficiaryName'] = payment.beneficiaryName.trim();
-      }
-      if (typeof payment.instructions === 'string') {
-        set['payment.instructions'] = payment.instructions.trim();
-      }
-
       if (typeof payment.upiQrImage === 'string') set['payment.upiQrImage'] = payment.upiQrImage.trim();
       if (typeof payment.upiId === 'string') set['payment.upiId'] = payment.upiId.trim();
       if (typeof payment.beneficiaryName === 'string') set['payment.beneficiaryName'] = payment.beneficiaryName.trim();
       if (typeof payment.instructions === 'string') set['payment.instructions'] = payment.instructions.trim();
- main
     }
 
     if (body.shipping && typeof body.shipping === 'object') {

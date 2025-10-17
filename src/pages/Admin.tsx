@@ -92,11 +92,11 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     upiQrImage: '',
     upiId: '',
     beneficiaryName: '',
- flare-verse
+ 
     instructions: 'Scan the QR code and send payment. Share the transaction ID in the next step.',
 
     instructions: 'Scan QR and pay. Enter UTR/Txn ID on next step.',
- main
+
   };
 }
 
@@ -337,6 +337,9 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const pendingOrdersCount = useMemo(() => {
+    try { return orders.filter((o: any) => String(o.status || '').toLowerCase() === 'pending').length; } catch { return 0; }
+  }, [orders]);
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -795,11 +798,7 @@ const Admin = () => {
       try {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
- flare-verse
-        const full = url && url.startsWith('http') ? url : (url ? url : '');
-
         const full = normalizeForUi(url);
- main
         setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
@@ -1476,13 +1475,13 @@ const handleProductSubmit = async (e: React.FormEvent) => {
 
       <Card>
         <CardHeader>
-flare-verse
+
           <CardTitle>UPI Payment</CardTitle>
           <CardDescription>Set up UPI and Cash on Delivery payment options for customers.</CardDescription>
 
           <CardTitle>UPI Payment Settings</CardTitle>
           <CardDescription>Configure UPI QR code and details for customers to scan and pay.</CardDescription>
- main
+
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePaymentSubmit} className="space-y-5">
@@ -1490,11 +1489,11 @@ flare-verse
               <Label htmlFor="upiId">UPI ID</Label>
               <Input
                 id="upiId"
- flare-verse
+ 
                 placeholder="e.g., name@upi"
 
                 placeholder="e.g., yourname@upi"
- main
+
                 value={paymentForm.upiId}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, upiId: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
@@ -1506,11 +1505,11 @@ flare-verse
               <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
               <Input
                 id="beneficiaryName"
- flare-verse
+ 
                 placeholder="e.g., UNI10 Store"
 
                 placeholder="e.g., Your Business Name"
- main
+
                 value={paymentForm.beneficiaryName}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, beneficiaryName: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
@@ -1522,11 +1521,11 @@ flare-verse
               <Label htmlFor="instructions">Payment Instructions</Label>
               <Textarea
                 id="instructions"
- flare-verse
+ 
                 placeholder="e.g., Scan the QR code and send payment. Share the transaction ID in the next step."
 
                 placeholder="e.g., Scan QR and pay. Enter UTR/Txn ID on next step."
- main
+
                 value={paymentForm.instructions}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, instructions: e.target.value }))}
                 rows={3}
@@ -1726,6 +1725,11 @@ flare-verse
                     >
                       <Icon className="h-4 w-4" />
                       <span className="truncate">{item.label}</span>
+                      {item.id === 'orders' && pendingOrdersCount > 0 && (
+                        <Badge variant={isActive ? 'secondary' : 'outline'} className="ml-auto">
+                          {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                        </Badge>
+                      )}
                     </button>
                   );
                 })}

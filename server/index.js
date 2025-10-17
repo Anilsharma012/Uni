@@ -74,9 +74,14 @@ app.use('/api/admin', adminRoutes);
 
 async function start() {
   const uri = process.env.MONGODB_URI;
+
   if (!uri) {
-    console.error('MONGODB_URI not set in environment');
-    process.exit(1);
+    console.warn('MONGODB_URI not set; starting server without DB connection. Some API routes may be unavailable.');
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+      console.log('Static uploads available at /uploads and /api/uploads');
+    });
+    return;
   }
 
   try {
@@ -92,7 +97,6 @@ async function start() {
       const demoEmail = 'sachin@gmail.com';
       const demoPassword = '123456';
       (async () => {
-        // Admin
         const existingAdmin = await User.findOne({ email: adminEmail.toLowerCase() });
         if (!existingAdmin) {
           const hash = await bcrypt.hash(adminPassword, 10);
@@ -106,7 +110,6 @@ async function start() {
           console.log('Admin user already exists');
         }
 
-        // Demo user (sachin)
         const existingDemo = await User.findOne({ email: demoEmail.toLowerCase() });
         if (!existingDemo) {
           const hash2 = await bcrypt.hash(demoPassword, 10);
@@ -126,7 +129,10 @@ async function start() {
     });
   } catch (err) {
     console.error('Failed to connect to MongoDB', err);
-    process.exit(1);
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT} (without DB)`);
+      console.log('Static uploads available at /uploads and /api/uploads');
+    });
   }
 }
 
