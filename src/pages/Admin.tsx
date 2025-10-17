@@ -1374,7 +1374,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                       ��{Number((order as any).total ?? (order as any).total_amount ?? 0).toLocaleString('en-IN')}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       size="sm"
                       variant={order.status === 'pending' ? 'default' : 'outline'}
