@@ -1299,92 +1299,52 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       <div>
         <h2 className="text-2xl font-bold">Payment Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Configure Razorpay keys and manual payment instructions. Defaults use Razorpay test credentials so you can integrate immediately.
+          Configure UPI payment details for your customers. Provide your UPI QR code, UPI ID, and payment instructions.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Razorpay</CardTitle>
-          <CardDescription>Enable secure online payments for UNI10 customers.</CardDescription>
+          <CardTitle>UPI Payment</CardTitle>
+          <CardDescription>Set up UPI and Cash on Delivery payment options for customers.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePaymentSubmit} className="space-y-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Label htmlFor="razorpayEnabled" className="font-medium">
-                  Razorpay Checkout
-                </Label>
-                <p className="text-sm text-muted-foreground">Toggle to enable or disable Razorpay payments.</p>
-              </div>
-              <Switch
-                id="razorpayEnabled"
-                checked={paymentForm.razorpayEnabled}
-                onCheckedChange={(checked) => setPaymentForm((prev) => ({ ...prev, razorpayEnabled: checked }))}
-                disabled={settingsLoading || savingPayment}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="razorpayKeyId">Key ID</Label>
-                <Input
-                  id="razorpayKeyId"
-                  value={paymentForm.razorpayKeyId}
-                  onChange={(e) => setPaymentForm((prev) => ({ ...prev, razorpayKeyId: e.target.value }))}
-                  disabled={settingsLoading || savingPayment}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="razorpayKeySecret">Key Secret</Label>
-                <Input
-                  id="razorpayKeySecret"
-                  value={paymentForm.razorpayKeySecret}
-                  onChange={(e) => setPaymentForm((prev) => ({ ...prev, razorpayKeySecret: e.target.value }))}
-                  disabled={settingsLoading || savingPayment}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Label htmlFor="manualPaymentEnabled" className="font-medium">
-                  Manual Payments
-                </Label>
-                <p className="text-sm text-muted-foreground">Allow bank transfers or UPI with manual verification.</p>
-              </div>
-              <Switch
-                id="manualPaymentEnabled"
-                checked={paymentForm.manualPaymentEnabled}
-                onCheckedChange={(checked) => setPaymentForm((prev) => ({ ...prev, manualPaymentEnabled: checked }))}
-                disabled={settingsLoading || savingPayment}
-              />
-            </div>
-
             <div>
-              <Label htmlFor="manualPaymentInstructions">Manual Payment Instructions</Label>
-              <Textarea
-                id="manualPaymentInstructions"
-                value={paymentForm.manualPaymentInstructions}
-                onChange={(e) => setPaymentForm((prev) => ({ ...prev, manualPaymentInstructions: e.target.value }))}
-                rows={4}
-                disabled={settingsLoading || savingPayment}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="manualPaymentContact">Support Email</Label>
+              <Label htmlFor="upiId">UPI ID</Label>
               <Input
-                id="manualPaymentContact"
-                type="email"
-                value={paymentForm.manualPaymentContact}
-                onChange={(e) => setPaymentForm((prev) => ({ ...prev, manualPaymentContact: e.target.value }))}
+                id="upiId"
+                placeholder="e.g., name@upi"
+                value={paymentForm.upiId}
+                onChange={(e) => setPaymentForm((prev) => ({ ...prev, upiId: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
-                required
               />
+              <p className="text-sm text-muted-foreground mt-1">Your UPI address (e.g., merchant@upi or 9876543210@paytm)</p>
+            </div>
+
+            <div>
+              <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
+              <Input
+                id="beneficiaryName"
+                placeholder="e.g., UNI10 Store"
+                value={paymentForm.beneficiaryName}
+                onChange={(e) => setPaymentForm((prev) => ({ ...prev, beneficiaryName: e.target.value }))}
+                disabled={settingsLoading || savingPayment}
+              />
+              <p className="text-sm text-muted-foreground mt-1">Name that appears to customers during payment</p>
+            </div>
+
+            <div>
+              <Label htmlFor="instructions">Payment Instructions</Label>
+              <Textarea
+                id="instructions"
+                placeholder="e.g., Scan the QR code and send payment. Share the transaction ID in the next step."
+                value={paymentForm.instructions}
+                onChange={(e) => setPaymentForm((prev) => ({ ...prev, instructions: e.target.value }))}
+                rows={3}
+                disabled={settingsLoading || savingPayment}
+              />
+              <p className="text-sm text-muted-foreground mt-1">Instructions shown to customers at checkout</p>
             </div>
 
             <div className="border-t border-border pt-5">
@@ -1392,10 +1352,10 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               <p className="text-sm text-muted-foreground mb-4">Upload your UPI QR code image to display during checkout when customers select UPI as payment method.</p>
 
               <div className="space-y-3">
-                {paymentForm.upiQrCode && (
+                {paymentForm.upiQrImage && (
                   <div className="border border-border rounded p-3 bg-muted">
                     <p className="text-xs text-muted-foreground mb-2">Current QR Code:</p>
-                    <img src={paymentForm.upiQrCode} alt="UPI QR Code" className="w-32 h-32 object-contain" />
+                    <img src={paymentForm.upiQrImage} alt="UPI QR Code" className="w-32 h-32 object-contain" />
                   </div>
                 )}
 
