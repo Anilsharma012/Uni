@@ -7,7 +7,7 @@ const { authOptional, requireAuth, requireAdmin } = require('../middleware/auth'
 // Create order
 router.post('/', authOptional, async (req, res) => {
   try {
-    const { customer, items, payment, name, phone, address, total } = req.body || {};
+    const { customer, items, payment, paymentMethod, name, phone, address, total, upi } = req.body || {};
     const orderItems = items || [];
     if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) return res.status(400).json({ ok: false, message: 'No items' });
 
@@ -20,18 +20,34 @@ router.post('/', authOptional, async (req, res) => {
     }
 
     const finalTotal = typeof total === 'number' && total > 0 ? total : computed;
+    const paymentType = payment || paymentMethod || 'COD';
 
-    const o = new Order({
+    let status = 'pending';
+    if (paymentType === 'COD') {
+      status = 'cod_pending';
+    } else if (paymentType === 'UPI') {
+      status = 'pending_verification';
+    }
+
+    const orderData = {
       userId: req.user ? req.user._id : undefined,
       name: name || customer?.name,
       phone: phone || customer?.phone,
       address: address || customer?.address,
-      payment: payment || 'COD',
+      payment: paymentType,
       items: orderItems,
       total: finalTotal,
-      status: payment === 'COD' ? 'pending' : 'paid',
-    });
+      status,
+    };
 
+    if (upi && typeof upi === 'object') {
+      orderData.upi = {
+        payerName: upi.payerName || '',
+        txnId: upi.txnId || '',
+      };
+    }
+
+    const o = new Order(orderData);
     await o.save();
     return res.json({ ok: true, data: o });
   } catch (e) {
