@@ -84,14 +84,10 @@ const NAV_ITEMS = [
 
 function createDefaultPaymentSettings(): PaymentSettingsForm {
   return {
-    razorpayEnabled: true,
-    razorpayKeyId: 'rzp_test_FUSION123456789',
-    razorpayKeySecret: 'test_secret_FUSION987654321',
-    manualPaymentEnabled: true,
-    manualPaymentInstructions:
-      'Bank Transfer (Account Name: UNI10 Pvt Ltd, Account No: 1234567890, IFSC: HDFC0001234) or UPI: uni10@upi. Share the payment confirmation at payments@uni10.in.',
-    manualPaymentContact: 'payments@uni10.in',
-    upiQrCode: '',
+    upiQrImage: '',
+    upiId: '',
+    beneficiaryName: '',
+    instructions: 'Scan the QR code and send payment. Share the transaction ID in the next step.',
   };
 }
 
