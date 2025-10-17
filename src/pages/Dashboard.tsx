@@ -15,6 +15,8 @@ export type Order = {
   _id: string;
   total: number;
   payment?: string;
+  paymentMethod?: string;
+  upi?: { payerName?: string; txnId?: string };
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled" | string;
   createdAt: string;
   items: OrderItem[];
