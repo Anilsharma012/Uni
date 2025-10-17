@@ -424,8 +424,11 @@ const Admin = () => {
     if (activeSection === 'users' && users.length === 0 && isAdmin) {
       void fetchAdminResources();
     }
+    if (activeSection === 'overview') {
+      void fetchOverviewStats(overviewRange);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection]);
+  }, [activeSection, overviewRange]);
 
   const fetchAdminResources = async () => {
     try {
