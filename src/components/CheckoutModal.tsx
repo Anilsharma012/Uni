@@ -137,16 +137,9 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         image: i.image,
       })),
       total,
-      created_at: new Date().toISOString(),
-      status: payment === "COD" ? "cod_pending" : "pending_verification",
-    };
-
-    if (payment === "UPI") {
-      (payload as any).upi = {
-        payerName: upiPayerName,
-        txnId: upiTxnId || undefined,
-      };
-    }
+      status: "pending",
+      upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+    } as any;
 
     const res = await placeOrder(payload);
     setLoading(false);
