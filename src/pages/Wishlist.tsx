@@ -2,59 +2,82 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-
-import { WishlistItem } from '@/types/database.types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Trash2 } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { useWishlist } from '@/hooks/useWishlist';
 import { api } from '@/lib/api';
 
+type ProductRow = {
+  _id?: string;
+  id?: string;
+  title?: string;
+  name?: string;
+  price?: number;
+  category?: string;
+  stock?: number;
+  image_url?: string;
+  images?: string[];
+};
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const resolveImage = (src?: string) => {
+  const s = String(src || '');
+  if (!s) return '/placeholder.svg';
+  if (s.startsWith('http')) return s;
+  const isLocalBase = (() => { try { return API_BASE.includes('localhost') || API_BASE.includes('127.0.0.1'); } catch { return false; } })();
+  const isHttpsPage = (() => { try { return location.protocol === 'https:'; } catch { return false; } })();
+  if (s.startsWith('/uploads') || s.startsWith('uploads')) {
+    if (API_BASE && !(isLocalBase && isHttpsPage)) {
+      const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+      return s.startsWith('/') ? `${base}${s}` : `${base}/${s}`;
+    }
+  }
+  return s;
+};
+
 const Wishlist = () => {
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [wishlistProducts, setWishlistProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { wishlistIds, removeFromWishlist } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchWishlist();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, navigate]);
+    fetchWishlistProducts();
+  }, [wishlistIds, user]);
 
-  const fetchWishlist = async () => {
-    if (!user) return;
+  const fetchWishlistProducts = async () => {
     try {
-      // Backend should return wishlist with populated product
-      const query = `/api/wishlist?userId=${encodeURIComponent(String((user as any).id || (user as any)._id || ''))}`;
-      const { ok, json } = await api(query);
-      if (!ok) throw new Error(json?.message || json?.error || 'Failed to load wishlist');
-      const data = json;
-      // api() returns { ok, json } wrapper for relative fetch; if backend returns array directly, handle it
-      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : (data?.wishlist || []);
-      setWishlistItems(Array.isArray(list) ? list : []);
+      setLoading(true);
+      
+      if (wishlistIds.size === 0) {
+        setWishlistProducts([]);
+        return;
+      }
+
+      const { ok, json } = await api('/api/products?limit=200');
+      if (!ok) throw new Error(json?.message || json?.error || 'Failed to load products');
+      
+      const allProducts = Array.isArray(json?.data) ? json.data : [];
+      const products = allProducts.filter((p: ProductRow) => {
+        const id = String(p._id || p.id || '');
+        return wishlistIds.has(id);
+      });
+
+      setWishlistProducts(products);
     } catch (e: any) {
       toast.error(e?.message || 'Failed to load wishlist');
-      setWishlistItems([]);
+      setWishlistProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const removeFromWishlist = async (id: string) => {
-    try {
-      const { ok, json } = await api(`/api/wishlist/${id}`, { method: 'DELETE' });
-      if (!ok) throw new Error(json?.message || json?.error || 'Failed to remove item');
-      toast.success('Removed from wishlist');
-      fetchWishlist();
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to remove item');
-    }
+  const handleRemove = (productId: string) => {
+    removeFromWishlist(productId);
   };
 
   return (
@@ -70,46 +93,66 @@ const Wishlist = () => {
 
         {loading ? (
           <div className="text-center py-12">Loading wishlist...</div>
-        ) : wishlistItems.length === 0 ? (
+        ) : wishlistProducts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">Your wishlist is empty</p>
-            <Button onClick={() => navigate('/products')}>Browse Products</Button>
+            <Button onClick={() => navigate('/shop')}>Browse Products</Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {wishlistItems.map((item: any) => (
-              <Card key={item.id || item._id} className="overflow-hidden bg-card border-border">
-                {item.products && (
-                  <>
-                    <div className="aspect-square overflow-hidden bg-secondary">
-                      <img
-                        src={item.products.image_url}
-                        alt={item.products.name}
-                        className="w-full h-full object-cover"
+            {wishlistProducts.map((product) => {
+              const id = String(product._id || product.id || '');
+              const title = product.title || product.name || '';
+              const rawImg = product.image_url || (Array.isArray(product.images) ? product.images[0] : '') || '/placeholder.svg';
+              const img = resolveImage(rawImg);
+
+              return (
+                <Card 
+                  key={id} 
+                  className="group overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-300"
+                >
+                  <div className="aspect-square overflow-hidden bg-secondary relative">
+                    <img
+                      src={img}
+                      alt={title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <button
+                      onClick={() => handleRemove(id)}
+                      className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-all duration-200"
+                    >
+                      <Heart
+                        className="h-5 w-5"
+                        fill="rgb(239, 68, 68)"
+                        color="rgb(239, 68, 68)"
                       />
-                    </div>
-                    <div className="p-4">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                        {item.products.category}
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                      {product.category || 'Uncategorized'}
+                    </p>
+                    <h3 className="font-semibold mb-2">{title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Stock: {Number(product.stock || 0)}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-bold">
+                        ₹{Number(product.price || 0).toLocaleString('en-IN')}
                       </p>
-                      <h3 className="font-semibold mb-2">{item.products.name}</h3>
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-bold">
-                          ₹{Number(item.products.price || 0).toLocaleString('en-IN')}
-                        </p>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => removeFromWishlist(String(item.id || item._id))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        onClick={() => handleRemove(id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </>
-                )}
-              </Card>
-            ))}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
