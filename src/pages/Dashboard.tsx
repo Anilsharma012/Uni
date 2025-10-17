@@ -285,7 +285,12 @@ export default function Dashboard() {
                         </table>
                       </div>
                       <div className="mt-4 flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">Payment: {o.payment || "-"}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Payment: {o.paymentMethod || o.payment || "-"}
+                          {o.upi?.txnId ? (
+                            <span className="ml-3 text-xs">UTR: {o.upi.txnId}</span>
+                          ) : null}
+                        </div>
                         <Button size="sm" onClick={() => reorder(o)}>Reorder</Button>
                       </div>
                     </div>
