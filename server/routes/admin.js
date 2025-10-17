@@ -89,7 +89,24 @@ router.get('/orders/:id', requireAuth, requireAdmin, async (req, res) => {
     const doc = await Order.findById(id).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
 
-    const address = doc.address || '';
+    const address = String(doc.address || '');
+
+    function deriveFromAddress(addr) {
+      try {
+        const a = String(addr || '');
+        const pinMatch = a.match(/(\d{6})(?!.*\d)/);
+        const pincode = pinMatch ? pinMatch[1] : '';
+        const cleaned = pinMatch ? a.replace(pinMatch[1], '') : a;
+        const parts = cleaned.split(/,|\n/).map((s) => s.trim()).filter(Boolean);
+        const city = parts.length ? parts[parts.length - 1].replace(/[^A-Za-z\s]/g, '').trim() : '';
+        return { city, pincode };
+      } catch {
+        return { city: '', pincode: '' };
+      }
+    }
+
+    const derived = deriveFromAddress(address);
+
     const detail = {
       id: String(doc._id),
       createdAt: doc.createdAt,
@@ -101,9 +118,9 @@ router.get('/orders/:id', requireAuth, requireAdmin, async (req, res) => {
         phone: doc.phone || '',
         address1: address,
         address2: '',
-        city: doc.city || '',
+        city: doc.city || derived.city || '',
         state: doc.state || '',
-        pincode: doc.pincode || '',
+        pincode: doc.pincode || derived.pincode || '',
       },
       items: Array.isArray(doc.items)
         ? doc.items.map((it) => ({
