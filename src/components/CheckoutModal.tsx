@@ -301,7 +301,11 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                         src={paymentSettings.upiQrImage}
                         alt="UPI QR Code"
                         className="w-40 h-40 border border-border rounded p-1 bg-white"
+                        onError={() => setQrError(true)}
                       />
+                      {qrError && (
+                        <div className="text-[11px] text-destructive">QR not available</div>
+                      )}
                     </div>
                   )}
 
