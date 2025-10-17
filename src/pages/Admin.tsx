@@ -813,7 +813,9 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       setSettings(normalizeSettings(updated));
       toast.success('Payment settings updated');
     } catch (error: any) {
-      toast.error(`Failed to update payment settings: ${error?.message ?? 'Unknown error'}`);
+      const errorMsg = error?.message ?? 'Unknown error';
+      console.error('Payment settings save error:', error);
+      toast.error(`Failed to update payment settings: ${errorMsg}`);
     } finally {
       setSavingPayment(false);
     }
