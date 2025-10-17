@@ -13,6 +13,10 @@ const PaymentSettingsSchema = new mongoose.Schema(
     },
     manualPaymentContact: { type: String, default: 'payments@uni10.in' },
     upiQrCode: { type: String, default: '' },
+    upiQrImage: { type: String, default: '' },
+    upiId: { type: String, default: 'uni10@upi' },
+    beneficiaryName: { type: String, default: 'UNI10 Pvt Ltd' },
+    upiInstructions: { type: String, default: 'Scan QR and pay. Enter UTR/Txn ID on next step.' },
   },
   { _id: false },
 );
