@@ -492,6 +492,51 @@ const Admin = () => {
     }
   };
 
+  const fetchOverviewStats = async (range: '7d' | '30d' | '90d') => {
+    try {
+      setOverviewLoading(true);
+      setOverviewError(null);
+      const data = await apiFetch<{ totals: any; lastMonth: any; prevMonth: any; series: any[] }>(`/api/admin/stats/overview?range=${range}`);
+      setOverviewData({
+        totals: {
+          revenue: Number((data as any)?.totals?.revenue || 0),
+          orders: Number((data as any)?.totals?.orders || 0),
+          users: Number((data as any)?.totals?.users || 0),
+        },
+        lastMonth: {
+          revenue: Number((data as any)?.lastMonth?.revenue || 0),
+          orders: Number((data as any)?.lastMonth?.orders || 0),
+        },
+        prevMonth: {
+          revenue: Number((data as any)?.prevMonth?.revenue || 0),
+          orders: Number((data as any)?.prevMonth?.orders || 0),
+        },
+        series: Array.isArray((data as any)?.series) ? (data as any).series : [],
+      });
+    } catch (e: any) {
+      setOverviewError(e?.message || 'Failed to load stats');
+      setOverviewData(null);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  const openOrderDetail = async (id: string) => {
+    setSelectedOrderId(id);
+    setOrderDrawerOpen(true);
+    setOrderDetail(null);
+    setOrderDetailError(null);
+    setOrderDetailLoading(true);
+    try {
+      const data = await apiFetch<any>(`/api/admin/orders/${id}`);
+      setOrderDetail(data);
+    } catch (e: any) {
+      setOrderDetailError(e?.message || 'Failed to load order');
+    } finally {
+      setOrderDetailLoading(false);
+    }
+  };
+
   const addCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catName.trim()) return;
