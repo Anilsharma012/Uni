@@ -154,7 +154,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
     setLoading(false);
 
     if (res.ok) {
-      const newOrderId = String(res.data?._id || res.data?.id ?? "local_" + Date.now());
+      const newOrderId = String((res.data?._id || res.data?.id) ?? "local_" + Date.now());
 
       try {
         const raw = localStorage.getItem("uni_orders_v1");
