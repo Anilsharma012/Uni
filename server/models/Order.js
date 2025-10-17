@@ -9,16 +9,23 @@ const OrderItemSchema = new mongoose.Schema({
   variant: Object,
 });
 
+const UPIPaymentSchema = new mongoose.Schema({
+  transactionId: { type: String },
+  payerName: { type: String },
+  paidAmount: { type: Number },
+}, { _id: false });
+
 const OrderSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     name: { type: String },
     phone: { type: String },
     address: { type: String },
-    payment: { type: String, enum: ['COD', 'UPI', 'Card'], default: 'COD' },
+    paymentMethod: { type: String, enum: ['COD', 'UPI'], default: 'COD' },
     items: { type: [OrderItemSchema], default: [] },
     total: { type: Number, default: 0 },
-    status: { type: String, enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'cod_pending', 'pending_verification', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+    upi: { type: UPIPaymentSchema, default: () => ({}) },
   },
   { timestamps: true },
 );
