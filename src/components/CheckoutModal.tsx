@@ -116,10 +116,22 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       return;
     }
 
+    if (payment === "UPI") {
+      if (!payerName) {
+        toast({
+          title: "Please enter payer name for UPI payment",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
-    const payload = {
-      customer: { name, phone, address },
-      payment_method: payment,
+    const payload: any = {
+      name,
+      phone,
+      address,
+      paymentMethod: payment,
       items: items.map((i) => ({
         id: i.id,
         title: i.title,
@@ -129,19 +141,25 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         image: i.image,
       })),
       total,
-      created_at: new Date().toISOString(),
     };
+
+    if (payment === "UPI") {
+      payload.upi = {
+        payerName,
+        txnId: txnId || '',
+      };
+    }
 
     const res = await placeOrder(payload);
     setLoading(false);
 
     if (res.ok) {
-      const newOrderId = String(res.data?.id ?? "local_" + Date.now());
+      const newOrderId = String(res.data?._id || res.data?.id ?? "local_" + Date.now());
 
       try {
         const raw = localStorage.getItem("uni_orders_v1");
         const arr = raw ? (JSON.parse(raw) as any[]) : [];
-        const status = payment === "COD" ? "pending" : "paid";
+        const status = payment === "COD" ? "cod_pending" : "pending_verification";
         const order = {
           _id: newOrderId,
           total,
@@ -155,6 +173,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
             qty: i.qty,
             image: i.image,
           })),
+          ...(payment === "UPI" && { upi: { payerName, txnId: txnId || '' } }),
         };
         localStorage.setItem("uni_orders_v1", JSON.stringify([order, ...arr]));
         localStorage.setItem("uni_last_order_id", newOrderId);
@@ -162,9 +181,13 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         console.error("Failed to persist local order", e);
       }
 
+      const message = payment === "COD"
+        ? "Order placed successfully. Awaiting delivery confirmation."
+        : "Payment pending verification. We'll confirm your order shortly.";
+
       toast({
         title: "Order placed",
-        description: `Order #${newOrderId} placed successfully`,
+        description: `Order #${newOrderId}: ${message}`,
       });
       try {
         window.dispatchEvent(
