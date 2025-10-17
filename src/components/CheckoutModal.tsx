@@ -56,7 +56,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const response = await fetch("/api/settings", {
+      const response = await fetch("/api/settings/payments", {
         method: "GET",
         headers,
         credentials: "include",
