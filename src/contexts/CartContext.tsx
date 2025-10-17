@@ -75,14 +75,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const placeOrder = async (payload: any) => {
     try {
       const { api } = await import('@/lib/api');
-      const res = await api('/api/orders', { method: 'POST', body: JSON.stringify(payload) });
+      const orderPayload = {
+        name: payload.customer?.name,
+        phone: payload.customer?.phone,
+        address: payload.customer?.address,
+        paymentMethod: payload.paymentMethod || 'COD',
+        items: payload.items,
+        total: payload.total,
+        status: payload.status || (payload.paymentMethod === 'COD' ? 'cod_pending' : 'pending_verification'),
+        upi: payload.upi,
+      };
+      const res = await api('/api/orders', { method: 'POST', body: JSON.stringify(orderPayload) });
       if (res.ok && res.json?.ok) return { ok: true, data: res.json.data };
       // backend didn't accept — fallback to local order
       const localId = 'local_order_' + Date.now();
       try {
         const raw = localStorage.getItem('uni_orders_v1');
         const arr = raw ? (JSON.parse(raw) as any[]) : [];
-        const order = { _id: localId, ...payload, createdAt: new Date().toISOString(), status: payload.payment === 'COD' ? 'pending' : 'paid' };
+        const order = { _id: localId, ...orderPayload, createdAt: new Date().toISOString() };
         localStorage.setItem('uni_orders_v1', JSON.stringify([order, ...arr]));
         localStorage.setItem('uni_last_order_id', localId);
       } catch (e) {
