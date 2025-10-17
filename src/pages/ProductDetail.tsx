@@ -275,7 +275,7 @@ const ProductDetail = () => {
                 </Button>
               </div>
             )}
- main
+
           </div>
         </div>
       </main>
