@@ -649,7 +649,7 @@ const Admin = () => {
           const relJson = await tryUpload('/api/uploads');
           const url = relJson?.url || relJson?.data?.url;
           const full = url && url.startsWith('http') ? url : (url ? url : '');
-          setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+          setPaymentForm((p) => ({ ...p, upiQrImage: full }));
           toast.success('QR Code uploaded');
           return;
         } catch (relErr) {
@@ -663,7 +663,7 @@ const Admin = () => {
           const url = json?.url || json?.data?.url;
           if (url) {
             const full = url.startsWith('http') ? url : `${baseNormalized}${url}`;
-            setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+            setPaymentForm((p) => ({ ...p, upiQrImage: full }));
             toast.success('QR Code uploaded');
             return;
           }
@@ -677,7 +677,7 @@ const Admin = () => {
               const url2 = json2?.url || json2?.data?.url;
               if (url2) {
                 const full = url2.startsWith('http') ? url2 : `${httpsUrl}${url2}`;
-                setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+                setPaymentForm((p) => ({ ...p, upiQrImage: full }));
                 toast.success('QR Code uploaded (via https fallback)');
                 return;
               }
@@ -692,7 +692,7 @@ const Admin = () => {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
         const full = url && url.startsWith('http') ? url : (url ? url : '');
-        setPaymentForm((p) => ({ ...p, upiQrCode: full }));
+        setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
       } catch (finalRelErr) {
