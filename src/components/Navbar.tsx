@@ -32,11 +32,11 @@ export const Navbar = ({ cartItemCount = 0 }: NavbarProps) => {
             <Link to="/products" className="text-sm font-medium hover:text-primary transition-colors">
               Products
             </Link>
-            <Link to="/new" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link to="/shop/new-arrivals" className="text-sm font-medium hover:text-primary transition-colors">
               New Arrivals
             </Link>
-            <Link to="/collections" className="text-sm font-medium hover:text-primary transition-colors">
-              Collections
+            <Link to="/wishlist" className="text-sm font-medium hover:text-primary transition-colors">
+              Wishlist
             </Link>
           </div>
 
@@ -105,18 +105,18 @@ export const Navbar = ({ cartItemCount = 0 }: NavbarProps) => {
                 Products
               </Link>
               <Link
-                to="/new"
+                to="/shop/new-arrivals"
                 className="text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 New Arrivals
               </Link>
               <Link
-                to="/collections"
+                to="/wishlist"
                 className="text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Collections
+                Wishlist
               </Link>
             </div>
           </div>

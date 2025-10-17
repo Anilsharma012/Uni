@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -17,6 +18,7 @@ interface ProductCardProps {
 export const ProductCard = ({ id, name, price, image, category }: ProductCardProps) => {
   const { user } = useAuth();
   const { addToCart } = (() => { try { return useCart(); } catch { return { addToCart: () => {} } as any; } })();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
 
   const handleAdd = (e: React.MouseEvent) => {
@@ -52,10 +54,16 @@ export const ProductCard = ({ id, name, price, image, category }: ProductCardPro
     return s;
   })();
 
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(id);
+  };
+
   return (
     <Card className="group overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-300">
       <Link to={`/product/${id}`}>
-        <div className="aspect-square overflow-hidden bg-secondary">
+        <div className="aspect-square overflow-hidden bg-secondary relative">
           <img
             src={src}
             alt={name}
@@ -71,6 +79,16 @@ export const ProductCard = ({ id, name, price, image, category }: ProductCardPro
               } catch { e.currentTarget.src = '/placeholder.svg'; }
             }}
           />
+          <button
+            onClick={handleWishlistClick}
+            className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-all duration-200"
+          >
+            <Heart
+              className="h-5 w-5 transition-all"
+              fill={isInWishlist(id) ? 'currentColor' : 'none'}
+              color={isInWishlist(id) ? 'rgb(239, 68, 68)' : 'currentColor'}
+            />
+          </button>
         </div>
       </Link>
       <div className="p-4">
