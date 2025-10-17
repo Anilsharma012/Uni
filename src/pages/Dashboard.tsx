@@ -331,6 +331,7 @@ export default function Dashboard() {
         </section>
       </main>
       <Footer />
+      <CheckoutModal open={openCheckout} setOpen={setOpenCheckout} />
     </div>
   );
 }
