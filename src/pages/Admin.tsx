@@ -414,6 +414,8 @@ const Admin = () => {
     void fetchAdminResources();
     void fetchIntegrationSettings();
     void fetchCategories();
+    // Preload overview stats
+    void fetchOverviewStats('30d');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading, adminUser]);
 
