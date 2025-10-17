@@ -19,12 +19,26 @@ function toClient(doc) {
   return obj;
 }
 
-function absoluteUrl(req, url) {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
-  if (url.startsWith('/')) return `${base}${url}`;
-  return `${base}/${url}`;
+function publicAssetUrl(req, value) {
+  const raw = typeof value === 'string' ? value : '';
+  if (!raw) return '';
+
+  // If an absolute URL is provided, but it's pointing to localhost, convert to same-origin '/api/uploads/...'
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+        return `/api${u.pathname}`;
+      }
+    } catch {}
+    return raw;
+  }
+
+  // For stored relative paths, normalize to '/api/uploads/...'
+  if (raw.startsWith('/uploads')) return `/api${raw}`;
+  if (raw.startsWith('uploads')) return `/api/${raw}`;
+
+  return raw;
 }
 
 // Admin-only full settings
@@ -44,7 +58,7 @@ router.get('/payments', async (req, res) => {
     const doc = await ensureSettingsDoc();
     const p = (doc.payment || {});
     const out = {
-      upiQrImage: absoluteUrl(req, p.upiQrImage || ''),
+      upiQrImage: publicAssetUrl(req, p.upiQrImage || ''),
       upiId: p.upiId || '',
       beneficiaryName: p.beneficiaryName || '',
       instructions: p.instructions || 'Scan QR and pay. Enter UTR/Txn ID on next step.',
