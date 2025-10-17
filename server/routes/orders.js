@@ -87,7 +87,7 @@ router.put('/:id/status', requireAuth, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body || {};
     if (!status) return res.status(400).json({ ok: false, message: 'Missing status' });
-    const allowed = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+    const allowed = ['pending', 'cod_pending', 'pending_verification', 'paid', 'shipped', 'delivered', 'cancelled'];
     if (!allowed.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
     const doc = await Order.findByIdAndUpdate(id, { status }, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
@@ -105,9 +105,9 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     let { status } = req.body || {};
     if (!status) return res.status(400).json({ ok: false, message: 'Missing status' });
     // Map common aliases from UI
-    const map = { processing: 'paid', completed: 'delivered' };
+    const map = { processing: 'paid', completed: 'delivered', pending: 'cod_pending' };
     status = map[status] || status;
-    const allowed = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+    const allowed = ['pending', 'cod_pending', 'pending_verification', 'paid', 'shipped', 'delivered', 'cancelled'];
     if (!allowed.includes(status)) return res.status(400).json({ ok: false, message: 'Invalid status' });
     const doc = await Order.findByIdAndUpdate(id, { status }, { new: true }).lean();
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
