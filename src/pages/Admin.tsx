@@ -87,7 +87,11 @@ function createDefaultPaymentSettings(): PaymentSettingsForm {
     upiQrImage: '',
     upiId: '',
     beneficiaryName: '',
+ flare-verse
     instructions: 'Scan the QR code and send payment. Share the transaction ID in the next step.',
+
+    instructions: 'Scan QR and pay. Enter UTR/Txn ID on next step.',
+ main
   };
 }
 
@@ -1320,8 +1324,13 @@ const handleProductSubmit = async (e: React.FormEvent) => {
 
       <Card>
         <CardHeader>
+flare-verse
           <CardTitle>UPI Payment</CardTitle>
           <CardDescription>Set up UPI and Cash on Delivery payment options for customers.</CardDescription>
+
+          <CardTitle>UPI Payment Settings</CardTitle>
+          <CardDescription>Configure UPI QR code and details for customers to scan and pay.</CardDescription>
+ main
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePaymentSubmit} className="space-y-5">
@@ -1329,7 +1338,11 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               <Label htmlFor="upiId">UPI ID</Label>
               <Input
                 id="upiId"
+ flare-verse
                 placeholder="e.g., name@upi"
+
+                placeholder="e.g., yourname@upi"
+ main
                 value={paymentForm.upiId}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, upiId: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
@@ -1341,7 +1354,11 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
               <Input
                 id="beneficiaryName"
+ flare-verse
                 placeholder="e.g., UNI10 Store"
+
+                placeholder="e.g., Your Business Name"
+ main
                 value={paymentForm.beneficiaryName}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, beneficiaryName: e.target.value }))}
                 disabled={settingsLoading || savingPayment}
@@ -1353,7 +1370,11 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               <Label htmlFor="instructions">Payment Instructions</Label>
               <Textarea
                 id="instructions"
+ flare-verse
                 placeholder="e.g., Scan the QR code and send payment. Share the transaction ID in the next step."
+
+                placeholder="e.g., Scan QR and pay. Enter UTR/Txn ID on next step."
+ main
                 value={paymentForm.instructions}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, instructions: e.target.value }))}
                 rows={3}
@@ -1364,7 +1385,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
 
             <div className="border-t border-border pt-5">
               <Label className="font-medium mb-3 block">UPI QR Code</Label>
-              <p className="text-sm text-muted-foreground mb-4">Upload your UPI QR code image to display during checkout when customers select UPI as payment method.</p>
+              <p className="text-sm text-muted-foreground mb-4">Upload your UPI QR code image to display during checkout.</p>
 
               <div className="space-y-3">
                 {paymentForm.upiQrImage && (

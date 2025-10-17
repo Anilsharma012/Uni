@@ -12,14 +12,22 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+ flare-verse
 import { Copy, Check } from "lucide-react";
+
+import { Loader2, Copy, Check } from "lucide-react";
+ main
 
 type Props = {
   open: boolean;
   setOpen: (v: boolean) => void;
 };
 
+ flare-verse
 type UPISettings = {
+
+type PaymentSettings = {
+ main
   upiQrImage: string;
   upiId: string;
   beneficiaryName: string;
@@ -36,6 +44,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [payment, setPayment] = useState<"COD" | "UPI">("COD");
+ flare-verse
   const [upiSettings, setUpiSettings] = useState<UPISettings | null>(null);
   const [loadingUpi, setLoadingUpi] = useState(false);
   const [payerName, setPayerName] = useState("");
@@ -53,15 +62,31 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
     try {
       setLoadingUpi(true);
       const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch('/api/settings', {
-        method: 'GET',
+
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+
+  const [upiPayerName, setUpiPayerName] = useState("");
+  const [upiTxnId, setUpiTxnId] = useState("");
+  const [copiedUpiId, setCopiedUpiId] = useState(false);
+
+  const fetchPaymentSettings = async () => {
+    try {
+      setLoadingSettings(true);
+      setSettingsError(null);
+      const token = localStorage.getItem("token");
+ main
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch("/api/settings", {
+        method: "GET",
         headers,
-        credentials: 'include',
+        credentials: "include",
       });
 
       let data: any = null;
@@ -70,6 +95,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       } catch {}
 
       if (response.ok && data?.data?.payment) {
+ flare-verse
         const payment = data.data.payment;
         setUpiSettings({
           upiQrImage: payment.upiQrImage || '',
@@ -97,10 +123,34 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       setTimeout(() => setCopiedUpi(false), 2000);
     } catch (error) {
       toast({ title: 'Failed to copy UPI ID', variant: 'destructive' });
+
+        setPaymentSettings(data.data.payment);
+      } else {
+        setSettingsError("Failed to load UPI settings");
+      }
+    } catch (error) {
+      console.error("Failed to fetch payment settings:", error);
+      setSettingsError("Failed to load UPI settings");
+    } finally {
+      setLoadingSettings(false);
     }
   };
 
-  // Consistent field styles to ensure text is visible
+  useEffect(() => {
+    if (open && payment === "UPI") {
+      fetchPaymentSettings();
+    }
+  }, [open, payment]);
+
+  const handleCopyUpiId = () => {
+    if (paymentSettings?.upiId) {
+      navigator.clipboard.writeText(paymentSettings.upiId);
+      setCopiedUpiId(true);
+      setTimeout(() => setCopiedUpiId(false), 2000);
+ main
+    }
+  };
+
   const fieldBase =
     "w-full border border-border rounded px-3 py-2 " +
     "text-foreground placeholder:text-muted-foreground bg-background " +
@@ -115,7 +165,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       });
       return;
     }
-
+ flare-verse
     if (payment === "UPI") {
       if (!payerName) {
         toast({
@@ -131,6 +181,20 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       name,
       phone,
       address,
+
+    if (payment === "UPI" && !upiPayerName) {
+      toast({
+        title: "Please enter payer name for UPI payment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      customer: { name, phone, address },
+ main
       paymentMethod: payment,
       items: items.map((i) => ({
         id: i.id,
@@ -141,12 +205,23 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         image: i.image,
       })),
       total,
+ flare-verse
     };
 
     if (payment === "UPI") {
       payload.upi = {
         payerName,
         txnId: txnId || '',
+
+      created_at: new Date().toISOString(),
+      status: payment === "COD" ? "cod_pending" : "pending_verification",
+    };
+
+    if (payment === "UPI") {
+      (payload as any).upi = {
+        payerName: upiPayerName,
+        txnId: upiTxnId || undefined,
+ main
       };
     }
 
@@ -159,12 +234,15 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       try {
         const raw = localStorage.getItem("uni_orders_v1");
         const arr = raw ? (JSON.parse(raw) as any[]) : [];
+ flare-verse
         const status = payment === "COD" ? "cod_pending" : "pending_verification";
+
+ main
         const order = {
           _id: newOrderId,
           total,
-          payment: payment,
-          status,
+          paymentMethod: payment,
+          status: payment === "COD" ? "cod_pending" : "pending_verification",
           createdAt: new Date().toISOString(),
           items: items.map((i) => ({
             id: i.id,
@@ -193,7 +271,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         window.dispatchEvent(
           new CustomEvent("order:placed", { detail: { id: newOrderId } })
         );
-      } catch { }
+      } catch {}
       clearCart();
       setOpen(false);
       navigate("/dashboard", { replace: true });
@@ -208,7 +286,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Checkout</DialogTitle>
           <DialogDescription>Complete your purchase</DialogDescription>
@@ -266,14 +344,25 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
 
           <div>
             <label className="block text-sm font-medium mb-2">Payment Method</label>
+ flare-verse
             <div className="flex gap-4">
+
+            <div className="space-y-2">
+ main
               <label className="flex items-center gap-2">
                 <input
                   className="accent-primary"
                   type="radio"
                   name="payment"
                   checked={payment === "COD"}
+ flare-verse
                   onChange={() => setPayment("COD")}
+
+                  onChange={() => {
+                    setPayment("COD");
+                    setSettingsError(null);
+                  }}
+ main
                 />
                 <span className="text-sm">Cash on Delivery</span>
               </label>
@@ -282,8 +371,13 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                   className="accent-primary"
                   type="radio"
                   name="payment"
-                  checked={payment === "UPI"}
+                  checked={payment === "UPI flare-verse
                   onChange={() => setPayment("UPI")}
+
+                  onChange={() => {
+                    setPayment("UPI");
+                  }}
+main
                 />
                 <span className="text-sm">UPI</span>
               </label>
@@ -291,6 +385,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           </div>
 
           {payment === "UPI" && (
+ flare-verse
             <div className="space-y-4 border border-border rounded-lg p-4 bg-muted">
               {loadingUpi ? (
                 <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
@@ -303,12 +398,32 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                       <p className="text-sm font-medium">Scan QR Code to Pay</p>
                       <img
                         src={upiSettings.upiQrImage}
+
+            <div className="border border-border rounded-lg p-4 bg-muted space-y-4">
+              {loadingSettings ? (
+                <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading UPI details...
+                </div>
+              ) : settingsError ? (
+                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded">
+                  {settingsError}
+                </div>
+              ) : paymentSettings ? (
+                <>
+                  {paymentSettings.upiQrImage && (
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm font-medium">Scan QR Code to Pay</p>
+                      <img
+                        src={paymentSettings.upiQrImage}
+ main
                         alt="UPI QR Code"
                         className="w-40 h-40 border border-border rounded p-1 bg-white"
                       />
                     </div>
                   )}
 
+ flare-verse
                   {upiSettings.upiId && (
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -373,11 +488,84 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                       type="text"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Enter the transaction ID from your UPI app</p>
+
+                  {paymentSettings.upiId && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">UPI ID: {paymentSettings.upiId}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyUpiId}
+                        className="w-full"
+                      >
+                        {copiedUpiId ? (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy UPI ID
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {paymentSettings.beneficiaryName && (
+                    <div className="text-xs text-muted-foreground">
+                      Beneficiary: {paymentSettings.beneficiaryName}
+                    </div>
+                  )}
+
+                  {paymentSettings.instructions && (
+                    <p className="text-xs text-muted-foreground italic">
+                      {paymentSettings.instructions}
+                    </p>
+                  )}
+
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <p className="text-sm font-medium">Confirm Payment</p>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Payer Name *</label>
+                      <input
+                        type="text"
+                        value={upiPayerName}
+                        onChange={(e) => setUpiPayerName(e.target.value)}
+                        className={fieldBase}
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">
+                        UTR / Txn ID (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={upiTxnId}
+                        onChange={(e) => setUpiTxnId(e.target.value)}
+                        className={fieldBase}
+                        placeholder="Enter transaction ID if available"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Amount</label>
+                      <div className="text-sm font-semibold">
+                        ₹{total.toLocaleString("en-IN")}
+                      </div>
+                    </div>
+ main
                   </div>
                 </>
               ) : (
                 <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+ flare-verse
                   UPI payment not configured yet
+
+                  UPI settings not configured yet
+ main
                 </div>
               )}
             </div>
@@ -385,10 +573,10 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         </div>
 
         <DialogFooter>
-          <div className="w-full flex items-center justify-between">
+          <div className="w-full flex flex-col gap-4">
             <div>
               <div className="text-sm text-muted-foreground">Total</div>
-              <div className="font-bold">
+              <div className="font-bold text-lg">
                 ₹{total.toLocaleString("en-IN")}
               </div>
             </div>
@@ -400,8 +588,17 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
               >
                 Cancel
               </Button>
-              <Button onClick={handlePlaceOrder} disabled={loading}>
-                {loading ? "Placing…" : "Place Order"}
+              <Button onClick={handlePlaceOrder} disabled={loading} className="flex-1">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Placing…
+                  </>
+                ) : payment === "UPI" ? (
+                  "I Have Paid"
+                ) : (
+                  "Place Order"
+                )}
               </Button>
             </div>
           </div>
