@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showCount, setShowCount] = useState(10);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [openCheckout, setOpenCheckout] = useState(false);
 
   // Protect route
   useEffect(() => {
