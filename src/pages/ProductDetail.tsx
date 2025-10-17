@@ -111,6 +111,30 @@ const ProductDetail = () => {
     toast({ title: 'Added to cart!', description: `${title} has been added to your cart.` });
   };
 
+  const handleBuyNow = () => {
+    if (!product) return;
+    if (outOfStock) {
+      toast({ title: 'Out of stock', variant: 'destructive' });
+      return;
+    }
+    // If product defines sizes, require selection
+    if (Array.isArray(product?.sizes) && product.sizes.length > 0 && !selectedSize) {
+      toast({ title: 'Select a size', description: 'Please choose a size before proceeding to checkout.', variant: 'destructive' });
+      return;
+    }
+
+    const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img, meta: {} as any };
+    if (selectedSize) item.meta.size = selectedSize;
+
+    if (!user) {
+      try { localStorage.setItem('uni_add_intent', JSON.stringify({ item, qty: 1 })); } catch {}
+      navigate('/auth');
+      return;
+    }
+    addToCart(item, 1);
+    navigate('/dashboard?checkout=true');
+  };
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Loading…</div>;
   if (!product) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
