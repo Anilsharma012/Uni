@@ -40,6 +40,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
 
   const [upiPayerName, setUpiPayerName] = useState("");
   const [upiTxnId, setUpiTxnId] = useState("");
