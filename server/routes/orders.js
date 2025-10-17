@@ -7,7 +7,7 @@ const { authOptional, requireAuth, requireAdmin } = require('../middleware/auth'
 // Create order
 router.post('/', authOptional, async (req, res) => {
   try {
-    const { customer, items, payment, name, phone, address, total } = req.body || {};
+    const { customer, items, paymentMethod: pm, payment, name, phone, address, total, upi, status } = req.body || {};
     const orderItems = items || [];
     if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) return res.status(400).json({ ok: false, message: 'No items' });
 
@@ -21,19 +21,23 @@ router.post('/', authOptional, async (req, res) => {
 
     const finalTotal = typeof total === 'number' && total > 0 ? total : computed;
 
-    const o = new Order({
+    // support both paymentMethod and legacy 'payment'
+    const paymentMethod = (pm || payment || 'COD').toString();
+
+    const doc = new Order({
       userId: req.user ? req.user._id : undefined,
       name: name || customer?.name,
       phone: phone || customer?.phone,
       address: address || customer?.address,
-      payment: payment || 'COD',
+      paymentMethod,
       items: orderItems,
       total: finalTotal,
-      status: payment === 'COD' ? 'pending' : 'paid',
+      status: (status && typeof status === 'string') ? status : 'pending',
+      upi: (paymentMethod === 'UPI' && upi && typeof upi === 'object') ? { payerName: upi.payerName, txnId: upi.txnId } : undefined,
     });
 
-    await o.save();
-    return res.json({ ok: true, data: o });
+    await doc.save();
+    return res.json({ ok: true, data: doc });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ ok: false, message: 'Server error' });
@@ -54,6 +58,17 @@ router.get('/', authOptional, async (req, res) => {
     if (!req.user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
     if (req.user.role !== 'admin') return res.status(403).json({ ok: false, message: 'Forbidden' });
     const docs = await Order.find().sort({ createdAt: -1 }).lean();
+    return res.json({ ok: true, data: docs });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+// Alias: GET /api/orders/mine
+router.get('/mine', requireAuth, async (req, res) => {
+  try {
+    const docs = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 }).lean();
     return res.json({ ok: true, data: docs });
   } catch (e) {
     console.error(e);
