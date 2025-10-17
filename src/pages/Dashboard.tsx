@@ -117,7 +117,7 @@ export default function Dashboard() {
   // Compute filtered and paginated orders
   const filtered = useMemo(() => {
     if (filter === "All") return orders;
-    const f = filter.toLowerCase();
+    const f = filter.toLowerCase().replace(/\s+/g, '_');
     return orders.filter((o) => (o.status || "").toLowerCase() === f);
   }, [orders, filter]);
   const visible = filtered.slice(0, showCount);
