@@ -67,8 +67,14 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         data = await response.json();
       } catch {}
 
-      if (response.ok && data?.data?.payment) {
-        setPaymentSettings(data.data.payment);
+      if (response.ok && data?.data) {
+        const p = data.data as any;
+        setPaymentSettings({
+          upiQrImage: typeof p.upiQrImage === "string" && p.updatedAt ? `${p.upiQrImage}?v=${encodeURIComponent(p.updatedAt)}` : p.upiQrImage || "",
+          upiId: p.upiId || "",
+          beneficiaryName: p.beneficiaryName || "",
+          instructions: p.instructions || "",
+        });
       } else {
         setSettingsError("Failed to load UPI settings");
       }
