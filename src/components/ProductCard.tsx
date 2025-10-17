@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -17,6 +18,7 @@ interface ProductCardProps {
 export const ProductCard = ({ id, name, price, image, category }: ProductCardProps) => {
   const { user } = useAuth();
   const { addToCart } = (() => { try { return useCart(); } catch { return { addToCart: () => {} } as any; } })();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
 
   const handleAdd = (e: React.MouseEvent) => {
