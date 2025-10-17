@@ -337,6 +337,9 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const pendingOrdersCount = useMemo(() => {
+    try { return orders.filter((o: any) => String(o.status || '').toLowerCase() === 'pending').length; } catch { return 0; }
+  }, [orders]);
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -1722,6 +1725,11 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                     >
                       <Icon className="h-4 w-4" />
                       <span className="truncate">{item.label}</span>
+                      {item.id === 'orders' && pendingOrdersCount > 0 && (
+                        <Badge variant={isActive ? 'secondary' : 'outline'} className="ml-auto">
+                          {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                        </Badge>
+                      )}
                     </button>
                   );
                 })}
