@@ -250,6 +250,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     }
 
     console.warn('Admin apiFetch network issue — using demo fallback for:', path, (err as any)?.message || err);
+    console.warn('This typically means the backend API is unreachable. Current location:', location.origin, 'API_BASE:', API_BASE);
 
     const p = path.toLowerCase();
     if (p.includes('/api/auth/users')) {
