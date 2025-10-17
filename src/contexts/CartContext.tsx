@@ -82,7 +82,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         paymentMethod: payload.paymentMethod || 'COD',
         items: payload.items,
         total: payload.total,
-        status: payload.status || (payload.paymentMethod === 'COD' ? 'cod_pending' : 'pending_verification'),
+        status: payload.status || 'pending',
         upi: payload.upi,
       };
       const res = await api('/api/orders', { method: 'POST', body: JSON.stringify(orderPayload) });
