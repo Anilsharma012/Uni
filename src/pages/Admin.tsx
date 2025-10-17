@@ -1359,7 +1359,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
           )}
           {orders.map((order: any) => (
             <Card key={order._id || order.id}>
-              <CardContent className="p-4">
+              <CardContent className="p-4 cursor-pointer" onClick={() => openOrderDetail(String(order._id || order.id))}>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <div>
                     <p className="font-semibold">
