@@ -25,8 +25,10 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), (req, res) =>
   if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
   const rel = `/uploads/${req.file.filename}`;
   const base = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
-  const url = `${base}${rel}`;
-  return res.json({ ok: true, url });
+  const absolute = `${base}${rel}`;
+  const apiUrl = `/api${rel}`; // same-origin path exposed by this server
+  // Return both for maximum compatibility; frontends should prefer 'apiUrl' to avoid mixed-content and localhost issues
+  return res.json({ ok: true, url: apiUrl, rel, absolute });
 });
 
 module.exports = router;
