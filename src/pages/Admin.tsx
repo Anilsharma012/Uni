@@ -5,6 +5,11 @@ import { Footer } from '@/components/Footer';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Product, Order, User } from '@/types/database.types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -358,6 +363,25 @@ const Admin = () => {
   const [savingShiprocket, setSavingShiprocket] = useState(false);
   const [uploadingQrCode, setUploadingQrCode] = useState(false);
 
+  // Overview chart state
+  const [overviewRange, setOverviewRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [overviewData, setOverviewData] = useState<{
+    totals: { revenue: number; orders: number; users: number };
+    lastMonth: { revenue: number; orders: number };
+    prevMonth: { revenue: number; orders: number };
+    series: { date: string; revenue: number; orders: number }[];
+  } | null>(null);
+
+  // Order detail drawer state
+  const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderDetail, setOrderDetail] = useState<any | null>(null);
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false);
+  const [orderDetailError, setOrderDetailError] = useState<string | null>(null);
+
   const totalSalesFormatted = useMemo(
     () => `₹${stats.totalSales.toLocaleString('en-IN')}`,
     [stats.totalSales],
@@ -407,6 +431,8 @@ const Admin = () => {
     void fetchAdminResources();
     void fetchIntegrationSettings();
     void fetchCategories();
+    // Preload overview stats
+    void fetchOverviewStats('30d');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading, adminUser]);
 
@@ -415,8 +441,11 @@ const Admin = () => {
     if (activeSection === 'users' && users.length === 0 && isAdmin) {
       void fetchAdminResources();
     }
+    if (activeSection === 'overview') {
+      void fetchOverviewStats(overviewRange);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection]);
+  }, [activeSection, overviewRange]);
 
   const fetchAdminResources = async () => {
     try {
@@ -477,6 +506,51 @@ const Admin = () => {
     } catch (e: any) {
       console.warn('Failed to load categories', e?.message || e);
       setCategories([]);
+    }
+  };
+
+  const fetchOverviewStats = async (range: '7d' | '30d' | '90d') => {
+    try {
+      setOverviewLoading(true);
+      setOverviewError(null);
+      const data = await apiFetch<{ totals: any; lastMonth: any; prevMonth: any; series: any[] }>(`/api/admin/stats/overview?range=${range}`);
+      setOverviewData({
+        totals: {
+          revenue: Number((data as any)?.totals?.revenue || 0),
+          orders: Number((data as any)?.totals?.orders || 0),
+          users: Number((data as any)?.totals?.users || 0),
+        },
+        lastMonth: {
+          revenue: Number((data as any)?.lastMonth?.revenue || 0),
+          orders: Number((data as any)?.lastMonth?.orders || 0),
+        },
+        prevMonth: {
+          revenue: Number((data as any)?.prevMonth?.revenue || 0),
+          orders: Number((data as any)?.prevMonth?.orders || 0),
+        },
+        series: Array.isArray((data as any)?.series) ? (data as any).series : [],
+      });
+    } catch (e: any) {
+      setOverviewError(e?.message || 'Failed to load stats');
+      setOverviewData(null);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  const openOrderDetail = async (id: string) => {
+    setSelectedOrderId(id);
+    setOrderDrawerOpen(true);
+    setOrderDetail(null);
+    setOrderDetailError(null);
+    setOrderDetailLoading(true);
+    try {
+      const data = await apiFetch<any>(`/api/admin/orders/${id}`);
+      setOrderDetail(data);
+    } catch (e: any) {
+      setOrderDetailError(e?.message || 'Failed to load order');
+    } finally {
+      setOrderDetailLoading(false);
     }
   };
 
@@ -634,6 +708,19 @@ const Admin = () => {
       }
     };
 
+    const normalizeForUi = (u: string) => {
+      const s = String(u || '');
+      if (!s) return '';
+      if (s.startsWith('http')) {
+        try { const parsed = new URL(s); if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return `/api${parsed.pathname}`; } catch {}
+        return s;
+      }
+      if (s.startsWith('/api/uploads')) return s;
+      if (s.startsWith('/uploads')) return `/api${s}`;
+      if (s.startsWith('uploads')) return `/api/${s}`;
+      return s;
+    };
+
     const tryUpload = async (uploadUrl: string) => {
       const fd = new FormData();
       fd.append('file', file);
@@ -665,7 +752,7 @@ const Admin = () => {
         try {
           const relJson = await tryUpload('/api/uploads');
           const url = relJson?.url || relJson?.data?.url;
-          const full = url && url.startsWith('http') ? url : (url ? url : '');
+          const full = normalizeForUi(url);
           setPaymentForm((p) => ({ ...p, upiQrImage: full }));
           toast.success('QR Code uploaded');
           return;
@@ -679,7 +766,7 @@ const Admin = () => {
           const json = await tryUpload(primaryUrl);
           const url = json?.url || json?.data?.url;
           if (url) {
-            const full = url.startsWith('http') ? url : `${baseNormalized}${url}`;
+            const full = normalizeForUi(url);
             setPaymentForm((p) => ({ ...p, upiQrImage: full }));
             toast.success('QR Code uploaded');
             return;
@@ -693,7 +780,7 @@ const Admin = () => {
               const json2 = await tryUpload(httpsUrl);
               const url2 = json2?.url || json2?.data?.url;
               if (url2) {
-                const full = url2.startsWith('http') ? url2 : `${httpsUrl}${url2}`;
+                const full = normalizeForUi(url2);
                 setPaymentForm((p) => ({ ...p, upiQrImage: full }));
                 toast.success('QR Code uploaded (via https fallback)');
                 return;
@@ -708,7 +795,11 @@ const Admin = () => {
       try {
         const relJson2 = await tryUpload('/api/uploads');
         const url = relJson2?.url || relJson2?.data?.url;
+ flare-verse
         const full = url && url.startsWith('http') ? url : (url ? url : '');
+
+        const full = normalizeForUi(url);
+ main
         setPaymentForm((p) => ({ ...p, upiQrImage: full }));
         toast.success('QR Code uploaded (via relative /api)');
         return;
@@ -874,67 +965,128 @@ const handleProductSubmit = async (e: React.FormEvent) => {
   const renderOverview = () => (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage catalogue, orders, payments, and shipping integrations for UNI10.
-        </p>
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter">Overview</h1>
+        <p className="text-muted-foreground mt-2">Sales and users at a glance.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {overviewLoading ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <p className="text-3xl font-bold">₹{Number(overviewData?.totals?.revenue || 0).toLocaleString('en-IN')}</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {overviewLoading ? <Skeleton className="h-8 w-16" /> : <p className="text-3xl font-bold">{Number(overviewData?.totals?.orders || 0)}</p>}
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
-              </div>
-            ) : (
-              <p className="text-4xl font-bold">{stats.totalUsers}</p>
-            )}
+            {overviewLoading ? <Skeleton className="h-8 w-16" /> : <p className="text-3xl font-bold">{Number(overviewData?.totals?.users || 0)}</p>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Total Sales</CardTitle>
+            <CardTitle>Last Month vs Previous</CardTitle>
           </CardHeader>
           <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
+            {overviewLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-32" />
               </div>
             ) : (
-              <p className="text-4xl font-bold">{orders.length}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {fetching ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading…</span>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center justify-between"><span>Revenue</span><span className="font-semibold">₹{Number(overviewData?.lastMonth?.revenue || 0).toLocaleString('en-IN')} vs ₹{Number(overviewData?.prevMonth?.revenue || 0).toLocaleString('en-IN')}</span></div>
+                <div className="flex items-center justify-between"><span>Orders</span><span className="font-semibold">{Number(overviewData?.lastMonth?.orders || 0)} vs {Number(overviewData?.prevMonth?.orders || 0)}</span></div>
               </div>
-            ) : (
-              <p className="text-4xl font-bold">{stats.totalProducts}</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>How to use this dashboard</CardTitle>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <CardTitle>Daily Revenue & Orders</CardTitle>
+            {overviewError && <p className="text-xs text-destructive mt-1">{overviewError}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {(['7d','30d','90d'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setOverviewRange(r)}
+                  className={cn('px-3 py-1 text-xs', overviewRange === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {(['line','bar'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChartType(t)}
+                  className={cn('px-3 py-1 text-xs capitalize', chartType === t ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted')}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>Select a section from the sidebar to manage products, orders, or users.</p>
-          <p>Use the Payment and Shiprocket settings to configure your integration keys. Defaults use Razorpay and Shiprocket test credentials so you can start testing immediately.</p>
+        <CardContent>
+          {overviewLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <ChartContainer
+              config={{ revenue: { label: 'Revenue', color: 'hsl(var(--primary))' }, orders: { label: 'Orders', color: 'hsl(var(--muted-foreground))' } }}
+              className="w-full aspect-[16/7]"
+            >
+              {({ width, height }) => (
+                chartType === 'line' ? (
+                  <LineChart width={width} height={height} data={overviewData?.series || []} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickMargin={8} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="var(--color-revenue)" dot={false} />
+                    <Line yAxisId="right" type="monotone" dataKey="orders" stroke="var(--color-orders)" dot={false} />
+                  </LineChart>
+                ) : (
+                  <BarChart width={width} height={height} data={overviewData?.series || []} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickMargin={8} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Bar yAxisId="left" dataKey="revenue" fill="var(--color-revenue)" radius={[4,4,0,0]} />
+                    <Bar yAxisId="right" dataKey="orders" fill="var(--color-orders)" radius={[4,4,0,0]} />
+                  </BarChart>
+                )
+              )}
+            </ChartContainer>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -1230,7 +1382,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
           )}
           {orders.map((order: any) => (
             <Card key={order._id || order.id}>
-              <CardContent className="p-4">
+              <CardContent className="p-4 cursor-pointer" onClick={() => openOrderDetail(String(order._id || order.id))}>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <div>
                     <p className="font-semibold">
@@ -1245,7 +1397,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                       ��{Number((order as any).total ?? (order as any).total_amount ?? 0).toLocaleString('en-IN')}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       size="sm"
                       variant={order.status === 'pending' ? 'default' : 'outline'}
@@ -1586,6 +1738,78 @@ flare-verse
           </section>
         </div>
       </main>
+
+      {/* Order Detail Drawer */}
+      <Drawer open={orderDrawerOpen} onOpenChange={(o) => { setOrderDrawerOpen(o); if (!o) { setOrderDetail(null); setOrderDetailError(null); } }}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Order #{selectedOrderId ? selectedOrderId.slice(0, 8) : ''}</DrawerTitle>
+            {orderDetail?.createdAt && (
+              <DrawerDescription>
+                {new Date(orderDetail.createdAt).toLocaleString()}
+              </DrawerDescription>
+            )}
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-4">
+            {orderDetailLoading && (
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            )}
+            {orderDetailError && (
+              <p className="text-xs text-destructive">{orderDetailError}</p>
+            )}
+            {orderDetail && !orderDetailLoading && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="capitalize">{orderDetail.status}</Badge>
+                  <Badge variant="secondary" className="capitalize">{orderDetail.paymentMethod}</Badge>
+                  <div className="ml-auto font-semibold">₹{Number(orderDetail.totals?.total || 0).toLocaleString('en-IN')}</div>
+                </div>
+
+                <div className="border rounded-md p-3">
+                  <h4 className="font-semibold mb-2">Shipping</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Name:</span> {orderDetail.shipping?.name || '-'}</div>
+                    <div><span className="text-muted-foreground">Phone:</span> {orderDetail.shipping?.phone || '-'}</div>
+                    <div className="md:col-span-2"><span className="text-muted-foreground">Address 1:</span> {orderDetail.shipping?.address1 || '-'}</div>
+                    {orderDetail.shipping?.address2 && (
+                      <div className="md:col-span-2"><span className="text-muted-foreground">Address 2:</span> {orderDetail.shipping?.address2}</div>
+                    )}
+                    <div><span className="text-muted-foreground">City:</span> {orderDetail.shipping?.city || '-'}</div>
+                    <div><span className="text-muted-foreground">State:</span> {orderDetail.shipping?.state || '-'}</div>
+                    <div><span className="text-muted-foreground">Pincode:</span> {orderDetail.shipping?.pincode || '-'}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Items</h4>
+                  <div className="space-y-2">
+                    {(orderDetail.items || []).map((it: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3 border rounded-md p-2">
+                        <img
+                          src={(it.image && String(it.image).length > 3) ? it.image : '/placeholder.svg'}
+                          alt={it.title || 'Product'}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{it.title}</div>
+                          <div className="text-xs text-muted-foreground">{it.variant?.size ? `Size: ${it.variant.size}` : ''}</div>
+                        </div>
+                        <div className="text-sm tabular-nums">{it.qty} × ₹{Number(it.price || 0).toLocaleString('en-IN')}</div>
+                        <div className="w-20 text-right font-semibold">₹{(Number(it.qty || 0) * Number(it.price || 0)).toLocaleString('en-IN')}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       <Footer />
     </div>
   );

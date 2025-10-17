@@ -67,6 +67,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
 
   const [upiPayerName, setUpiPayerName] = useState("");
   const [upiTxnId, setUpiTxnId] = useState("");
@@ -83,7 +84,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const response = await fetch("/api/settings", {
+      const response = await fetch("/api/settings/payments", {
         method: "GET",
         headers,
         credentials: "include",
@@ -94,6 +95,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
         data = await response.json();
       } catch {}
 
+ flare-verse
       if (response.ok && data?.data?.payment) {
  flare-verse
         const payment = data.data.payment;
@@ -125,6 +127,16 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       toast({ title: 'Failed to copy UPI ID', variant: 'destructive' });
 
         setPaymentSettings(data.data.payment);
+
+      if (response.ok && data?.data) {
+        const p = data.data as any;
+        setPaymentSettings({
+          upiQrImage: typeof p.upiQrImage === "string" && p.updatedAt ? `${p.upiQrImage}?v=${encodeURIComponent(p.updatedAt)}` : p.upiQrImage || "",
+          upiId: p.upiId || "",
+          beneficiaryName: p.beneficiaryName || "",
+          instructions: p.instructions || "",
+        });
+ main
       } else {
         setSettingsError("Failed to load UPI settings");
       }
@@ -206,6 +218,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       })),
       total,
  flare-verse
+ flare-verse
     };
 
     if (payment === "UPI") {
@@ -225,6 +238,11 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
       };
     }
 
+      status: "pending",
+      upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+    } as any;
+ main
+
     const res = await placeOrder(payload);
     setLoading(false);
 
@@ -242,7 +260,7 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           _id: newOrderId,
           total,
           paymentMethod: payment,
-          status: payment === "COD" ? "cod_pending" : "pending_verification",
+          status: "pending",
           createdAt: new Date().toISOString(),
           items: items.map((i) => ({
             id: i.id,
@@ -251,8 +269,13 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
             qty: i.qty,
             image: i.image,
           })),
+ flare-verse
           ...(payment === "UPI" && { upi: { payerName, txnId: txnId || '' } }),
         };
+
+          upi: payment === "UPI" ? { payerName: upiPayerName, txnId: upiTxnId || undefined } : undefined,
+        } as any;
+ main
         localStorage.setItem("uni_orders_v1", JSON.stringify([order, ...arr]));
         localStorage.setItem("uni_last_order_id", newOrderId);
       } catch (e) {
@@ -415,11 +438,30 @@ main
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-medium">Scan QR Code to Pay</p>
                       <img
+ flare-verse
                         src={paymentSettings.upiQrImage}
+ main
+
+                        src={(function(){
+                          const s = String(paymentSettings.upiQrImage || '');
+                          if (!s) return '';
+                          if (s.startsWith('http')) {
+                            try { const u = new URL(s); if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return `/api${u.pathname}`; } catch {}
+                            return s;
+                          }
+                          if (s.startsWith('/api/uploads')) return s;
+                          if (s.startsWith('/uploads')) return `/api${s}`;
+                          if (s.startsWith('uploads')) return `/api/${s}`;
+                          return s;
+                        })()}
  main
                         alt="UPI QR Code"
                         className="w-40 h-40 border border-border rounded p-1 bg-white"
+                        onError={() => setQrError(true)}
                       />
+                      {qrError && (
+                        <div className="text-[11px] text-destructive">QR not available</div>
+                      )}
                     </div>
                   )}
 

@@ -24,8 +24,12 @@ const OrderSchema = new mongoose.Schema(
     paymentMethod: { type: String, enum: ['COD', 'UPI', 'Card'], default: 'COD' },
     items: { type: [OrderItemSchema], default: [] },
     total: { type: Number, default: 0 },
+flare-verse
     status: { type: String, enum: ['cod_pending', 'pending_verification', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'cod_pending' },
  main
+
+    status: { type: String, enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+main
     upi: {
       payerName: { type: String },
       txnId: { type: String },

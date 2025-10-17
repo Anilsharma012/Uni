@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -107,36 +107,37 @@ const Wishlist = () => {
               const img = resolveImage(rawImg);
 
               return (
-                <Card 
-                  key={id} 
+                <Card
+                  key={id}
                   className="group overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-300"
                 >
-                  <div className="aspect-square overflow-hidden bg-secondary relative">
-                    <img
-                      src={img}
-                      alt={title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <button
-                      onClick={() => handleRemove(id)}
-                      className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-all duration-200"
-                    >
-                      <Heart
-                        className="h-5 w-5"
-                        fill="rgb(239, 68, 68)"
-                        color="rgb(239, 68, 68)"
+                  <Link to={`/product/${id}`}>
+                    <div className="aspect-square overflow-hidden bg-secondary relative">
+                      <img
+                        src={img}
+                        alt={title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
                       />
-                    </button>
-                  </div>
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(id); }}
+                        className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-all duration-200"
+                      >
+                        <Heart
+                          className="h-5 w-5"
+                          fill="rgb(239, 68, 68)"
+                          color="rgb(239, 68, 68)"
+                        />
+                      </button>
+                    </div>
+                  </Link>
                   <div className="p-4">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                       {product.category || 'Uncategorized'}
                     </p>
-                    <h3 className="font-semibold mb-2">{title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Stock: {Number(product.stock || 0)}
-                    </p>
+                    <Link to={`/product/${id}`}>
+                      <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{title}</h3>
+                    </Link>
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-bold">
                         ₹{Number(product.price || 0).toLocaleString('en-IN')}
@@ -144,7 +145,7 @@ const Wishlist = () => {
                       <Button
                         size="icon"
                         variant="destructive"
-                        onClick={() => handleRemove(id)}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(id); }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -19,12 +19,54 @@ function toClient(doc) {
   return obj;
 }
 
+function publicAssetUrl(req, value) {
+  const raw = typeof value === 'string' ? value : '';
+  if (!raw) return '';
+
+  // If an absolute URL is provided, but it's pointing to localhost, convert to same-origin '/api/uploads/...'
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+        return `/api${u.pathname}`;
+      }
+    } catch {}
+    return raw;
+  }
+
+  // For stored relative paths, normalize to '/api/uploads/...'
+  if (raw.startsWith('/uploads')) return `/api${raw}`;
+  if (raw.startsWith('uploads')) return `/api/${raw}`;
+
+  return raw;
+}
+
+// Admin-only full settings
 router.get('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const doc = await ensureSettingsDoc();
     return res.json({ ok: true, data: toClient(doc) });
   } catch (error) {
     console.error('Failed to load settings', error);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+// Public payments settings for checkout
+router.get('/payments', async (req, res) => {
+  try {
+    const doc = await ensureSettingsDoc();
+    const p = (doc.payment || {});
+    const out = {
+      upiQrImage: publicAssetUrl(req, p.upiQrImage || ''),
+      upiId: p.upiId || '',
+      beneficiaryName: p.beneficiaryName || '',
+      instructions: p.instructions || 'Scan QR and pay. Enter UTR/Txn ID on next step.',
+      updatedAt: doc.updatedAt,
+    };
+    return res.json({ ok: true, data: out });
+  } catch (error) {
+    console.error('Failed to load payment settings', error);
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
