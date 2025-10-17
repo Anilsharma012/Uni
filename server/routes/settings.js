@@ -41,19 +41,10 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
 
     if (body.payment && typeof body.payment === 'object') {
       const payment = body.payment;
-      if (typeof payment.razorpayEnabled === 'boolean') set['payment.razorpayEnabled'] = payment.razorpayEnabled;
-      if (typeof payment.razorpayKeyId === 'string') set['payment.razorpayKeyId'] = payment.razorpayKeyId.trim();
-      if (typeof payment.razorpayKeySecret === 'string') set['payment.razorpayKeySecret'] = payment.razorpayKeySecret.trim();
-      if (typeof payment.manualPaymentEnabled === 'boolean') set['payment.manualPaymentEnabled'] = payment.manualPaymentEnabled;
-      if (typeof payment.manualPaymentInstructions === 'string') {
-        set['payment.manualPaymentInstructions'] = payment.manualPaymentInstructions.trim();
-      }
-      if (typeof payment.manualPaymentContact === 'string') {
-        set['payment.manualPaymentContact'] = payment.manualPaymentContact.trim();
-      }
-      if (typeof payment.upiQrCode === 'string') {
-        set['payment.upiQrCode'] = payment.upiQrCode.trim();
-      }
+      if (typeof payment.upiQrImage === 'string') set['payment.upiQrImage'] = payment.upiQrImage.trim();
+      if (typeof payment.upiId === 'string') set['payment.upiId'] = payment.upiId.trim();
+      if (typeof payment.beneficiaryName === 'string') set['payment.beneficiaryName'] = payment.beneficiaryName.trim();
+      if (typeof payment.instructions === 'string') set['payment.instructions'] = payment.instructions.trim();
     }
 
     if (body.shipping && typeof body.shipping === 'object') {
