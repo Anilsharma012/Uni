@@ -265,18 +265,15 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Payment</label>
-            <div className="flex gap-3">
+            <label className="block text-sm font-medium mb-2">Payment Method</label>
+            <div className="flex gap-4">
               <label className="flex items-center gap-2">
                 <input
                   className="accent-primary"
                   type="radio"
                   name="payment"
                   checked={payment === "COD"}
-                  onChange={() => {
-                    setPayment("COD");
-                    setUpiQrCode(null);
-                  }}
+                  onChange={() => setPayment("COD")}
                 />
                 <span className="text-sm">Cash on Delivery</span>
               </label>
@@ -286,50 +283,101 @@ export const CheckoutModal: React.FC<Props> = ({ open, setOpen }) => {
                   type="radio"
                   name="payment"
                   checked={payment === "UPI"}
-                  onChange={() => {
-                    setPayment("UPI");
-                    if (!upiQrCode && !loadingQr) {
-                      fetchUpiQrCode();
-                    }
-                  }}
+                  onChange={() => setPayment("UPI")}
                 />
                 <span className="text-sm">UPI</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  className="accent-primary"
-                  type="radio"
-                  name="payment"
-                  checked={payment === "Card"}
-                  onChange={() => {
-                    setPayment("Card");
-                    setUpiQrCode(null);
-                  }}
-                />
-                <span className="text-sm">Card</span>
               </label>
             </div>
           </div>
 
           {payment === "UPI" && (
-            <div className="border border-border rounded-lg p-4 bg-muted">
-              <p className="text-sm font-medium mb-3">Scan QR Code to Pay</p>
-              {loadingQr ? (
+            <div className="space-y-4 border border-border rounded-lg p-4 bg-muted">
+              {loadingUpi ? (
                 <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
-                  Loading QR code...
+                  Loading UPI details...
                 </div>
-              ) : upiQrCode ? (
-                <div className="flex flex-col items-center gap-2">
-                  <img
-                    src={upiQrCode}
-                    alt="UPI QR Code"
-                    className="w-40 h-40 border border-border rounded p-1 bg-white"
-                  />
-                  <p className="text-xs text-muted-foreground text-center">Scan with any UPI app</p>
-                </div>
+              ) : upiSettings && (upiSettings.upiQrImage || upiSettings.upiId) ? (
+                <>
+                  {upiSettings.upiQrImage && (
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm font-medium">Scan QR Code to Pay</p>
+                      <img
+                        src={upiSettings.upiQrImage}
+                        alt="UPI QR Code"
+                        className="w-40 h-40 border border-border rounded p-1 bg-white"
+                      />
+                    </div>
+                  )}
+
+                  {upiSettings.upiId && (
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="text-sm font-medium">UPI ID: {upiSettings.upiId}</p>
+                        <button
+                          type="button"
+                          onClick={copyUpiId}
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-background hover:bg-input rounded border border-border transition-colors"
+                        >
+                          {copiedUpi ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {upiSettings.beneficiaryName && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Beneficiary: {upiSettings.beneficiaryName}</p>
+                    </div>
+                  )}
+
+                  {upiSettings.instructions && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">{upiSettings.instructions}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1" htmlFor="payerName">
+                      Your Name
+                    </label>
+                    <input
+                      id="payerName"
+                      value={payerName}
+                      onChange={(e) => setPayerName(e.target.value)}
+                      className={fieldBase}
+                      placeholder="Name as shown in payment"
+                      type="text"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1" htmlFor="txnId">
+                      Transaction/UTR ID (Optional)
+                    </label>
+                    <input
+                      id="txnId"
+                      value={txnId}
+                      onChange={(e) => setTxnId(e.target.value)}
+                      className={fieldBase}
+                      placeholder="e.g., 123456789"
+                      type="text"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Enter the transaction ID from your UPI app</p>
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
-                  QR code not configured yet
+                  UPI payment not configured yet
                 </div>
               )}
             </div>
