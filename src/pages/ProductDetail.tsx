@@ -229,10 +229,7 @@ const ProductDetail = () => {
                   </Tooltip>
                 </TooltipProvider>
               ) : (
-                <Button size="lg" className="w-full" onClick={handleAddToCart} variant="outline">
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
-                </Button>
+               
               )}
               {!outOfStock && (
                 <Button size="lg" className="w-full" onClick={handleBuyNow}>
@@ -256,24 +253,7 @@ const ProductDetail = () => {
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <div className="space-y-3">
-                <Button size="lg" className="w-full" onClick={handleAddToCart}>
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
-                </Button>
-                <Button size="lg" className="w-full" variant="outline" onClick={() => {
-                  if (!user) {
-                    navigate('/auth');
-                    return;
-                  }
-                  const item = { id: String(product._id || product.id || id), title, price: Number(product.price || 0), image: img, meta: {} as any };
-                  if (selectedSize) item.meta.size = selectedSize;
-                  addToCart(item, 1);
-                  navigate('/cart');
-                }}>
-                  Buy Now
-                </Button>
-              </div>
+             
             )}
 
           </div>
