@@ -1730,6 +1730,8 @@ const handleProductSubmit = async (e: React.FormEvent) => {
         return renderOrders();
       case 'users':
         return renderUsers();
+      case 'support':
+        return navigate('/admin/support');
       case 'payment':
         return renderPaymentSettings();
       case 'shiprocket':
