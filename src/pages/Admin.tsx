@@ -85,6 +85,7 @@ const NAV_ITEMS = [
   { id: 'categories', label: 'Categories', icon: Tags },
   { id: 'orders', label: 'Orders', icon: Receipt },
   { id: 'users', label: 'Users', icon: Users2 },
+  { id: 'support', label: 'Support Center', icon: MessageCircle },
   { id: 'payment', label: 'Payment Settings', icon: CreditCard },
   { id: 'shiprocket', label: 'Shiprocket Settings', icon: Truck },
 ] as const;
