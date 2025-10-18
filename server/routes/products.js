@@ -7,7 +7,7 @@ const { authOptional, requireAuth, requireAdmin } = require('../middleware/auth'
 // List products: supports active, category, q
 router.get('/', authOptional, async (req, res) => {
   try {
-    const { active, category, q, limit = 50, page = 1 } = req.query;
+    const { active, category, q, limit = 10, page = 1 } = req.query;
     const filter = {};
     // By default, only return active products. Allow overriding with active=false or active=all
     if (typeof active === 'undefined') {
