@@ -19,11 +19,23 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { name, description, active } = req.body || {};
     if (!name) return res.status(400).json({ ok: false, message: 'Missing name' });
-    const doc = await Category.create({ name, description, active: typeof active === 'boolean' ? active : true });
+    if (!name.trim()) return res.status(400).json({ ok: false, message: 'Name cannot be empty' });
+
+    const trimmedName = name.trim();
+    const existingCategory = await Category.findOne({ name: trimmedName });
+    if (existingCategory) {
+      return res.status(400).json({ ok: false, message: 'Category already exists' });
+    }
+
+    const doc = await Category.create({
+      name: trimmedName,
+      description: description ? description.trim() : '',
+      active: typeof active === 'boolean' ? active : true
+    });
     return res.json({ ok: true, data: doc });
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ ok: false, message: 'Server error' });
+    console.error('Category create error:', e.message, e);
+    return res.status(500).json({ ok: false, message: e.message || 'Server error' });
   }
 });
 
