@@ -14,6 +14,7 @@ const reviewsRoutes = require('./routes/reviews');
 const settingsRoutes = require('./routes/settings');
 const uploadsRoutes = require('./routes/uploads');
 const adminRoutes = require('./routes/admin');
+const supportRoutes = require('./routes/support');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
