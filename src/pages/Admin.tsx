@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { Pagination } from '@/components/Pagination';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Product, Order, User } from '@/types/database.types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -337,9 +338,22 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersCurrentPage, setOrdersCurrentPage] = useState(1);
+  const ordersPerPage = 13;
+
   const pendingOrdersCount = useMemo(() => {
     try { return orders.filter((o: any) => String(o.status || '').toLowerCase() === 'pending').length; } catch { return 0; }
   }, [orders]);
+
+  const ordersTotalPages = useMemo(() => {
+    return Math.ceil(orders.length / ordersPerPage);
+  }, [orders.length]);
+
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (ordersCurrentPage - 1) * ordersPerPage;
+    const endIndex = startIndex + ordersPerPage;
+    return orders.slice(startIndex, endIndex);
+  }, [orders, ordersCurrentPage]);
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -446,6 +460,9 @@ const Admin = () => {
     }
     if (activeSection === 'overview') {
       void fetchOverviewStats(overviewRange);
+    }
+    if (activeSection === 'orders') {
+      setOrdersCurrentPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, overviewRange]);
@@ -559,15 +576,24 @@ const Admin = () => {
 
   const addCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!catName.trim()) return;
+    if (!catName.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
     try {
       setCatSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required. Please login again.');
+        return;
+      }
       await apiFetch(ENDPOINTS.categories, { method: 'POST', body: JSON.stringify({ name: catName.trim(), description: catDesc.trim() }) });
-      toast.success('Category added');
+      toast.success('Category added successfully');
       setCatName('');
       setCatDesc('');
       await fetchCategories();
     } catch (err: any) {
+      console.error('Add category error:', err);
       toast.error(err?.message || 'Failed to add category');
     } finally {
       setCatSaving(false);
@@ -1369,17 +1395,23 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       <div>
         <h2 className="text-2xl font-bold">Orders</h2>
         <p className="text-sm text-muted-foreground">Track customer orders and update their status.</p>
+        {orders.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Showing {(ordersCurrentPage - 1) * ordersPerPage + 1} to {Math.min(ordersCurrentPage * ordersPerPage, orders.length)} of {orders.length} orders
+          </p>
+        )}
       </div>
       {fetching ? (
         <div className="flex items-center justify-center py-10 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading orders…
         </div>
       ) : (
-        <div className="grid gap-4">
-          {orders.length === 0 && (
-            <p className="text-sm text-muted-foreground">No orders found.</p>
-          )}
-          {orders.map((order: any) => (
+        <>
+          <div className="grid gap-4">
+            {orders.length === 0 && (
+              <p className="text-sm text-muted-foreground">No orders found.</p>
+            )}
+            {paginatedOrders.map((order: any) => (
             <Card key={order._id || order.id}>
               <CardContent className="p-4 cursor-pointer" onClick={() => openOrderDetail(String(order._id || order.id))}>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -1423,7 +1455,15 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+          {orders.length > 0 && (
+            <Pagination
+              currentPage={ordersCurrentPage}
+              totalPages={ordersTotalPages}
+              onPageChange={setOrdersCurrentPage}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -1802,7 +1842,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                           <div className="font-medium">{it.title}</div>
                           <div className="text-xs text-muted-foreground">{it.variant?.size ? `Size: ${it.variant.size}` : ''}</div>
                         </div>
-                        <div className="text-sm tabular-nums">{it.qty} × ₹{Number(it.price || 0).toLocaleString('en-IN')}</div>
+                        <div className="text-sm tabular-nums">{it.qty} × ���{Number(it.price || 0).toLocaleString('en-IN')}</div>
                         <div className="w-20 text-right font-semibold">₹{(Number(it.qty || 0) * Number(it.price || 0)).toLocaleString('en-IN')}</div>
                       </div>
                     ))}
