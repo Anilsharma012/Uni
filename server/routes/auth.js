@@ -70,13 +70,38 @@ router.get('/me', async (req, res) => {
   }
 });
 
-// Update profile
+// Update profile (PUT /api/auth/me)
 router.put('/me', requireAuth, async (req, res) => {
   try {
     const updates = {};
-    const { name, phone } = req.body || {};
+    const { name, phone, address1, address2, city, state, pincode } = req.body || {};
     if (name) updates.name = name;
     if (phone) updates.phone = phone;
+    if (address1 !== undefined) updates.address1 = address1;
+    if (address2 !== undefined) updates.address2 = address2;
+    if (city !== undefined) updates.city = city;
+    if (state !== undefined) updates.state = state;
+    if (pincode !== undefined) updates.pincode = pincode;
+    const doc = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-passwordHash');
+    return res.json({ ok: true, user: doc });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+// Update profile (PATCH /api/user/profile for alias compatibility)
+router.patch('/profile', requireAuth, async (req, res) => {
+  try {
+    const updates = {};
+    const { name, phone, address1, address2, city, state, pincode } = req.body || {};
+    if (name) updates.name = name;
+    if (phone) updates.phone = phone;
+    if (address1 !== undefined) updates.address1 = address1;
+    if (address2 !== undefined) updates.address2 = address2;
+    if (city !== undefined) updates.city = city;
+    if (state !== undefined) updates.state = state;
+    if (pincode !== undefined) updates.pincode = pincode;
     const doc = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-passwordHash');
     return res.json({ ok: true, user: doc });
   } catch (e) {
