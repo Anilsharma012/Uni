@@ -29,6 +29,7 @@ import {
   CreditCard,
   Truck,
   Tags,
+  MessageCircle,
 } from 'lucide-react';
 import {
   Dialog,
