@@ -461,6 +461,9 @@ const Admin = () => {
     if (activeSection === 'overview') {
       void fetchOverviewStats(overviewRange);
     }
+    if (activeSection === 'orders') {
+      setOrdersCurrentPage(1);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, overviewRange]);
 
@@ -1816,7 +1819,7 @@ const handleProductSubmit = async (e: React.FormEvent) => {
                           <div className="font-medium">{it.title}</div>
                           <div className="text-xs text-muted-foreground">{it.variant?.size ? `Size: ${it.variant.size}` : ''}</div>
                         </div>
-                        <div className="text-sm tabular-nums">{it.qty} × ₹{Number(it.price || 0).toLocaleString('en-IN')}</div>
+                        <div className="text-sm tabular-nums">{it.qty} × ���{Number(it.price || 0).toLocaleString('en-IN')}</div>
                         <div className="w-20 text-right font-semibold">₹{(Number(it.qty || 0) * Number(it.price || 0)).toLocaleString('en-IN')}</div>
                       </div>
                     ))}
