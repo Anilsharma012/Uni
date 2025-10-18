@@ -72,6 +72,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
 
 async function start() {
   const uri = process.env.MONGODB_URI;
