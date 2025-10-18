@@ -145,4 +145,37 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Cancel order (user or admin)
+router.post('/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ ok: false, message: 'Order not found' });
+    }
+
+    // Check authorization: user can cancel their own order, admin can cancel any
+    if (String(order.userId) !== String(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ ok: false, message: 'Forbidden' });
+    }
+
+    // Can only cancel if status is pending, cod_pending, or pending_verification
+    const cancellableStatuses = ['pending', 'cod_pending', 'pending_verification'];
+    if (!cancellableStatuses.includes(order.status)) {
+      return res.status(400).json({ ok: false, message: 'Order cannot be cancelled in current status' });
+    }
+
+    order.status = 'cancelled';
+    if (reason) order.cancellationReason = reason;
+    await order.save();
+
+    return res.json({ ok: true, data: order });
+  } catch (e) {
+    console.error('Cancel order error:', e);
+    return res.status(500).json({ ok: false, message: 'Failed to cancel order' });
+  }
+});
+
 module.exports = router;
