@@ -338,9 +338,22 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersCurrentPage, setOrdersCurrentPage] = useState(1);
+  const ordersPerPage = 25;
+
   const pendingOrdersCount = useMemo(() => {
     try { return orders.filter((o: any) => String(o.status || '').toLowerCase() === 'pending').length; } catch { return 0; }
   }, [orders]);
+
+  const ordersTotalPages = useMemo(() => {
+    return Math.ceil(orders.length / ordersPerPage);
+  }, [orders.length]);
+
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (ordersCurrentPage - 1) * ordersPerPage;
+    const endIndex = startIndex + ordersPerPage;
+    return orders.slice(startIndex, endIndex);
+  }, [orders, ordersCurrentPage]);
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
