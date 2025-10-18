@@ -1386,17 +1386,23 @@ const handleProductSubmit = async (e: React.FormEvent) => {
       <div>
         <h2 className="text-2xl font-bold">Orders</h2>
         <p className="text-sm text-muted-foreground">Track customer orders and update their status.</p>
+        {orders.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Showing {(ordersCurrentPage - 1) * ordersPerPage + 1} to {Math.min(ordersCurrentPage * ordersPerPage, orders.length)} of {orders.length} orders
+          </p>
+        )}
       </div>
       {fetching ? (
         <div className="flex items-center justify-center py-10 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading orders…
         </div>
       ) : (
-        <div className="grid gap-4">
-          {orders.length === 0 && (
-            <p className="text-sm text-muted-foreground">No orders found.</p>
-          )}
-          {orders.map((order: any) => (
+        <>
+          <div className="grid gap-4">
+            {orders.length === 0 && (
+              <p className="text-sm text-muted-foreground">No orders found.</p>
+            )}
+            {paginatedOrders.map((order: any) => (
             <Card key={order._id || order.id}>
               <CardContent className="p-4 cursor-pointer" onClick={() => openOrderDetail(String(order._id || order.id))}>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -1440,7 +1446,15 @@ const handleProductSubmit = async (e: React.FormEvent) => {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+          {orders.length > 0 && (
+            <Pagination
+              currentPage={ordersCurrentPage}
+              totalPages={ordersTotalPages}
+              onPageChange={setOrdersCurrentPage}
+            />
+          )}
+        </>
       )}
     </div>
   );
