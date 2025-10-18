@@ -230,6 +230,14 @@ export default function Dashboard() {
                   Wishlist
                 </button>
               </div>
+              <div className="border-t border-border mt-3 pt-3">
+                <button
+                  onClick={() => navigate("/help-center")}
+                  className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted text-muted-foreground hover:text-foreground"
+                >
+                  Help Center
+                </button>
+              </div>
             </div>
           </aside>
 
