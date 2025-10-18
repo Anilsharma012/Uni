@@ -15,8 +15,10 @@ import Auth from "./pages/Auth";
 import Products from "./pages/Products";
 import Wishlist from "./pages/Wishlist";
 import Dashboard from "./pages/Dashboard";
+import HelpCenter from "./pages/HelpCenter";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
+import SupportCenter from "./pages/SupportCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
