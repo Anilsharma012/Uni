@@ -576,15 +576,24 @@ const Admin = () => {
 
   const addCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!catName.trim()) return;
+    if (!catName.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
     try {
       setCatSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required. Please login again.');
+        return;
+      }
       await apiFetch(ENDPOINTS.categories, { method: 'POST', body: JSON.stringify({ name: catName.trim(), description: catDesc.trim() }) });
-      toast.success('Category added');
+      toast.success('Category added successfully');
       setCatName('');
       setCatDesc('');
       await fetchCategories();
     } catch (err: any) {
+      console.error('Add category error:', err);
       toast.error(err?.message || 'Failed to add category');
     } finally {
       setCatSaving(false);
